@@ -1,0 +1,81 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  uName    String
+  email    String    @unique
+  password String
+  phone    String?
+  role     Role
+  bookings Booking[]
+  createdAt  DateTime?  @default(now())
+  updatedAt  DateTime?  @updatedAt
+}
+
+model Booking {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  bookingDate  DateTime
+  status       String
+  description  String?
+  user         User      @relation(fields: [userId], references: [id])
+  bookingServices BookingService[]
+  bookingSlots BookingSlot[]
+  createdAt  DateTime?  @default(now())
+  updatedAt  DateTime?  @updatedAt
+
+}
+
+model Service {
+  id              Int              @id @default(autoincrement())
+  sName           String
+  description     String?
+  price           Float
+  durationMinutes Int
+  bookingServices BookingService[]
+  createdAt  DateTime?  @default(now())
+  updatedAt  DateTime?  @updatedAt
+}
+
+model BookingService {
+  id         Int     @id @default(autoincrement())
+  bookingId  Int
+  serviceId  Int
+  booking    Booking @relation(fields: [bookingId], references: [id])
+  service    Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([bookingId, serviceId])
+}
+
+model Slot {
+  id       Int       @id @default(autoincrement())
+  name     String    @default("Unnamed Slot")    // เช่น "Slot 1", "Slot 2", "Slot 3"
+  bookingSlots BookingSlot[]
+  createdAt  DateTime?  @default(now())
+  updatedAt  DateTime?  @updatedAt
+}
+
+model BookingSlot {
+  id         Int      @id @default(autoincrement())
+  bookingId  Int
+  slotId     Int
+  startTime  DateTime
+  endTime    DateTime
+
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  slot       Slot     @relation(fields: [slotId], references: [id])
+
+  @@index([slotId])
+}
