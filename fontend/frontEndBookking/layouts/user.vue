@@ -1,38 +1,25 @@
+<!-- layouts/user.vue -->
+<template>
+  <div>
+    <nav>
+      <!-- User Navbar -->
+      <NuxtLink to="/user/bookingWelcome">หน้าหลัก</NuxtLink>
+      <NuxtLink to="/user/bookingForm">จองคิว</NuxtLink>
+      <button @click="logout">Logout</button>
+    </nav>
+    <main>
+      <slot />
+    </main>
+  </div>
+</template>
+
 <script setup lang="ts">
-const currentYear = new Date().getFullYear();
+// ✅ ไม่ต้อง import useRouter หากใช้ Nuxt 3
+const router = useRouter()
 
-interface NavItem {
-    title: string;
-    to : string;
-    isExternal?: boolean;
+function logout() {
+  localStorage.removeItem('token')
+  router.push('/')
 }
-
-const navItems: NavItem[] = [
-  { title: 'Home', to: '/' },
-  { title: 'Nuxt Homepage', to: 'https://nuxt.com', isExternal: true },
-  { title: 'YouTube', to: 'https://www.youtube.com', isExternal: true }
-];
-
-
 </script>
 
-<template>
-    <nav>
-       <ul>
-        <li v-for="item in navItems" :key="item.title">
-            <NuxtLink v-if="!item.isExternal" :to="item.to">{{ item.title }}</NuxtLink>
-            <a v-else :href="item.to" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-
-        </li>
-       </ul>
-    </nav>
-
-    <main>
-        <slot></slot>
-    </main>
-
-    <footer>
-        <p>&copy; {{ currentYear }}</p>
-    </footer>
-
-</template>

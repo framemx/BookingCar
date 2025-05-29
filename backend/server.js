@@ -27,18 +27,19 @@ const init = async () => {
 
   // สมัคร handler สำหรับ preflight OPTIONS เอง (ถ้า Hapi ไม่ตอบอัตโนมัติ)
   server.ext('onPreResponse', (request, h) => {
-    const response = request.response;
-    if (request.method === 'options') {
-      return h
-        .response()
-        .code(204)
-        .header('Access-Control-Allow-Origin', '*')
-        .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        .header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With')
-        .takeover();
-    }
-    return h.continue;
-  });
+  const response = request.response;
+  if (request.method === 'options') {
+    return h
+      .response()
+      .code(204)
+      .header('Access-Control-Allow-Origin', '*')
+      .header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')  // เพิ่ม PATCH
+      .header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With')
+      .takeover();
+  }
+  return h.continue;
+});
+
 
   await server.register(prismaPlugin);
   await server.register(swaggerPlugin);
