@@ -16,10 +16,22 @@
           >Service</NuxtLink
         >
         <NuxtLink
+          to="/admin/slotList"
+          class="nav-link"
+          :class="{ 'active': isActive('/admin/slotList') }"
+          >Slot List</NuxtLink
+        >
+        <NuxtLink
           to="/admin/slotManagement"
           class="nav-link"
           :class="{ 'active': isActive('/admin/slotManagement') }"
           >Slot Management</NuxtLink
+        >
+        <NuxtLink
+          to="/admin/userManagement"
+          class="nav-link"
+          :class="{ 'active': isActive('/admin/userManagement') }"
+          >User Management</NuxtLink
         >
       </div>
 

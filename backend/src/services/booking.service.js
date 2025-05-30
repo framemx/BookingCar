@@ -1,21 +1,61 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// ฟังก์ชันเช็ค slot ว่าง
+const checkSlotAvailability = async (tx, slots) => {
+  for (const { slotId } of slots) {
+    // ดึงข้อมูล slot พร้อมนับจำนวน booking ที่มีอยู่
+    const slot = await tx.slot.findUnique({
+      where: { id: slotId },
+      include: {
+        bookingSlots: true,
+      },
+    });
+
+    if (!slot) {
+      throw new Error(`Slot with id ${slotId} does not exist`);
+    }
+
+    const currentBookingsCount = slot.bookingSlots.length;
+
+    if (currentBookingsCount >= slot.capacity) {
+      throw new Error(`Slot ${slotId} is fully booked`);
+    }
+  }
+};
+
+// ฟังก์ชันเช็ค services ว่ามีอยู่จริง
+const checkServicesExist = async (tx, services) => {
+  if (services.length === 0) return;
+
+  const servicesExist = await tx.service.findMany({
+    where: { id: { in: services } },
+  });
+
+  if (servicesExist.length !== services.length) {
+    throw new Error('One or more selected services do not exist');
+  }
+};
+
 const createBooking = async (data) => {
   const { userId, bookingDate, status, description, services = [], slots = [] } = data;
 
   return await prisma.$transaction(async (tx) => {
+    // ตรวจสอบ slot และ service ก่อนสร้าง
+    await checkServicesExist(tx, services);
+    await checkSlotAvailability(tx, slots);
+
     const booking = await tx.booking.create({
       data: {
         userId,
         bookingDate: new Date(bookingDate),
         status,
-        description, // 👈 เพิ่มตรงนี้
+        description,
       },
     });
 
     if (services.length > 0) {
-      const bookingServicesData = services.map(serviceId => ({
+      const bookingServicesData = services.map((serviceId) => ({
         bookingId: booking.id,
         serviceId,
       }));
@@ -64,7 +104,15 @@ const updateBooking = async (id, data) => {
     const updateData = {};
     if (status !== undefined) updateData.status = status;
     if (bookingDate !== undefined) updateData.bookingDate = new Date(bookingDate);
-    if (description !== undefined) updateData.description = description; // 👈 เพิ่มตรงนี้
+    if (description !== undefined) updateData.description = description;
+
+    // ถ้ามี services หรือ slots ให้ตรวจสอบก่อนอัปเดต
+    if (services) {
+      await checkServicesExist(tx, services);
+    }
+    if (slots) {
+      await checkSlotAvailability(tx, slots);
+    }
 
     const updatedBooking = await tx.booking.update({
       where: { id },
@@ -73,7 +121,7 @@ const updateBooking = async (id, data) => {
 
     if (services) {
       await tx.bookingService.deleteMany({ where: { bookingId: id } });
-      const bookingServicesData = services.map(serviceId => ({
+      const bookingServicesData = services.map((serviceId) => ({
         bookingId: id,
         serviceId,
       }));

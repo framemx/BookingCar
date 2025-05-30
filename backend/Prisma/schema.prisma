@@ -12,6 +12,12 @@ enum Role {
   ADMIN
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
   id       Int       @id @default(autoincrement())
   uName    String
@@ -59,23 +65,24 @@ model BookingService {
   @@unique([bookingId, serviceId])
 }
 
-model Slot {
-  id       Int       @id @default(autoincrement())
-  name     String    @default("Unnamed Slot")    // เช่น "Slot 1", "Slot 2", "Slot 3"
-  bookingSlots BookingSlot[]
-  createdAt  DateTime?  @default(now())
-  updatedAt  DateTime?  @updatedAt
-}
+  model Slot {
+    id           Int           @id @default(autoincrement())
+    date         DateTime
+    startTime    DateTime
+    endTime      DateTime
+    slotName     String        @default("Unnamed Slot") // เช่น "Slot 1"
+    status       String        @default("AVAILABLE")    // เช่น "AVAILABLE", "BOOKED"
+    bookingSlots BookingSlot[]
+    createdAt    DateTime?     @default(now())
+    updatedAt    DateTime?     @updatedAt
+  }
 
-model BookingSlot {
-  id         Int      @id @default(autoincrement())
-  bookingId  Int
-  slotId     Int
-  startTime  DateTime
-  endTime    DateTime
+  model BookingSlot {
+    id         Int     @id @default(autoincrement())
+    bookingId  Int
+    slotId     Int
+    booking    Booking @relation(fields: [bookingId], references: [id])
+    slot       Slot    @relation(fields: [slotId], references: [id])
+  }
 
-  booking    Booking  @relation(fields: [bookingId], references: [id])
-  slot       Slot     @relation(fields: [slotId], references: [id])
-
-  @@index([slotId])
-}
+    

@@ -4,38 +4,62 @@
 
     <label>จำนวน Slot ที่ต้องการ:</label>
     <input type="number" v-model.number="slotCount" min="1" />
-    <button @click="generateSlots">สร้าง Slot</button>
+    <button @click="generateSlots" class="btn-primary">สร้าง Slot</button>
 
     <div v-for="(slot, index) in slots" :key="index" class="slot-group">
       <div class="slot-inputs">
         <div class="form-control">
+          <label :for="'date-' + index">วันที่</label>
+          <input type="date" :id="'date-' + index" v-model="slot.date" />
+        </div>
+
+        <div class="form-control">
           <label :for="'start-' + index">เวลาเริ่มต้น (24 ชม.)</label>
-          <input type="time" :id="'start-' + index" v-model="slot.start" />
+          <input type="time" :id="'start-' + index" v-model="slot.startTime" />
         </div>
 
         <div class="form-control">
           <label :for="'end-' + index">เวลาสิ้นสุด (24 ชม.)</label>
-          <input type="time" :id="'end-' + index" v-model="slot.end" />
+          <input type="time" :id="'end-' + index" v-model="slot.endTime" />
+        </div>
+
+        <div class="form-control">
+          <label :for="'name-' + index">ชื่อ Slot</label>
+          <input type="text" :id="'name-' + index" v-model="slot.slotName" />
+        </div>
+
+        <div class="form-control">
+          <label :for="'status-' + index">สถานะ</label>
+          <select :id="'status-' + index" v-model="slot.status">
+            <option value="AVAILABLE">Available</option>
+            <option value="BOOKED">Booked</option>
+          </select>
         </div>
       </div>
+
       <button class="btn-remove" @click="removeSlot(index)">ลบ</button>
     </div>
 
-    <button class="save-button" @click="saveSlots">บันทึก Slot</button>
+    <button class="save-button btn-primary" @click="saveSlots">บันทึก Slot</button>
   </div>
 </template>
 
 <script setup>
-definePageMeta({ layout: 'admin' })
 import { ref } from 'vue'
-
+definePageMeta({ layout: 'admin' })
 const slotCount = ref(1)
 const slots = ref([])
 
 function generateSlots() {
   slots.value = []
   for (let i = 0; i < slotCount.value; i++) {
-    slots.value.push({ start: '09:00', end: '10:00' })
+    slots.value.push({
+      date: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
+      startTime: '09:00',
+      endTime: '10:00',
+      slotName: `Slot ${i + 1}`,
+      status: 'AVAILABLE'
+    })
   }
 }
 
@@ -44,19 +68,46 @@ function removeSlot(index) {
 }
 
 function saveSlots() {
-  localStorage.setItem('shopSlots', JSON.stringify(slots.value))
-  alert('บันทึก Slot เรียบร้อย')
+  slots.value.forEach(async (slot) => {
+    const payload = {
+      slotName: slot.slotName,
+      date: new Date(`${slot.date}T00:00:00`).toISOString(),
+      startTime: new Date(`${slot.date}T${slot.startTime}:00`).toISOString(),
+      endTime: new Date(`${slot.date}T${slot.endTime}:00`).toISOString(),
+      status: slot.status
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(`ไม่สามารถบันทึก slot: ${errorData.message}`)
+      }
+
+      console.log('บันทึกสำเร็จ:', payload)
+    } catch (err) {
+      console.error(err.message)
+    }
+  })
+
+  alert('กำลังบันทึก Slot ทั้งหมด...')
 }
+
 </script>
 
 <style scoped>
 .container {
-  max-width: 600px;
+  max-width: 700px;
   margin: 2rem auto;
-  padding: 2rem;
+  padding: 2rem 2.5rem;
   background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   font-family: 'Sarabun', sans-serif;
   color: #1e293b;
   box-sizing: border-box;
@@ -65,77 +116,99 @@ function saveSlots() {
 h2 {
   text-align: center;
   color: #2563eb;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  margin-bottom: 1.8rem;
+  font-weight: 700;
 }
 
 label {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
   font-weight: 600;
   color: #475569;
+  font-size: 1rem;
 }
 
-input[type='number'] {
+input[type='number'],
+input[type='date'],
+input[type='time'],
+input[type='text'],
+select {
   width: 100%;
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 0.8rem;
   font-size: 1rem;
-  border: 1.5px solid #cbd5e1;
+  border: 1.8px solid #cbd5e1;
   border-radius: 12px;
   margin-bottom: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+input[type='number']:focus,
+input[type='date']:focus,
+input[type='time']:focus,
+input[type='text']:focus,
+select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 5px #2563ebaa;
 }
 
 button {
-  background-color: #2563eb;
-  color: white;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  font-weight: bold;
+  font-family: 'Sarabun', sans-serif;
+  font-weight: 700;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.3s ease;
-  margin-top: 0.5rem;
+  transition: background-color 0.3s ease;
 }
 
-button:hover {
+.btn-primary {
+  background-color: #2563eb;
+  color: #fff;
+  padding: 0.7rem 1.6rem;
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+
+.btn-primary:hover {
   background-color: #1e40af;
 }
 
 .slot-group {
   background: #f9fafb;
   border: 1px solid #e2e8f0;
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1.2rem;
+  padding: 1.2rem 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 1.6rem;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 .slot-inputs {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.25rem;
 }
 
 .form-control {
-  flex: 1;
-  min-width: 120px;
-}
-
-input[type='time'] {
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1.5px solid #cbd5e1;
-  font-size: 1rem;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .btn-remove {
-  background-color: #ef4444;
   align-self: flex-start;
+  background-color: #ef4444;
+  color: white;
+  padding: 0.45rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-top: 0.5rem;
+  transition: background-color 0.3s ease;
 }
 
 .btn-remove:hover {
@@ -144,6 +217,6 @@ input[type='time'] {
 
 .save-button {
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 1.8rem;
 }
 </style>

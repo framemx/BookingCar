@@ -75,9 +75,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: 'admin',
-})
+definePageMeta({ layout: 'admin' })
 
 import { ref, reactive, onMounted } from "vue";
 

@@ -1,5 +1,9 @@
 const bookingSlotService = require('../services/bookingSlot.service');
-const { createBookingSlotSchema, getBookingSlotByIdSchema, updateBookingSlotSchema } = require('../validations/bookingSlot.validation');
+const {
+  createBookingSlotSchema,
+  getBookingSlotByIdSchema,
+  updateBookingSlotSchema,
+} = require('../validations/bookingSlot.validation');
 
 const createBookingSlot = async (request, h) => {
   try {
@@ -20,7 +24,9 @@ const getBookingSlotById = async (request, h) => {
   try {
     const { id } = getBookingSlotByIdSchema.parse(request.params);
     const bookingSlot = await bookingSlotService.getBookingSlotById(id);
-    if (!bookingSlot) return h.response({ error: 'BookingSlot not found' }).code(404);
+    if (!bookingSlot) {
+      return h.response({ error: 'BookingSlot not found' }).code(404);
+    }
     return h.response(bookingSlot);
   } catch (error) {
     return h.response({ error: error.errors ?? error.message }).code(400);
@@ -39,7 +45,10 @@ const deleteBookingSlot = async (request, h) => {
 
 const updateBookingSlot = async (request, h) => {
   try {
-    const data = updateBookingSlotSchema.parse({ id: Number(request.params.id), ...request.payload });
+    const data = updateBookingSlotSchema.parse({
+      id: Number(request.params.id),
+      ...request.payload,
+    });
     const updated = await bookingSlotService.updateBookingSlot(data.id, data);
     return h.response(updated);
   } catch (error) {

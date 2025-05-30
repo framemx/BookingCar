@@ -1,6 +1,12 @@
 const bookingService = require('../services/booking.service');
-const { createBookingSchema, getBookingByIdSchema, updateBookingSchema } = require('../validations/booking.validation');
+const {
+  createBookingSchema,
+  getBookingByIdSchema,
+  updateBookingSchema,
+  updateBookingStatusSchema, // ✅ เพิ่ม schema สำหรับ PATCH
+} = require('../validations/booking.validation');
 
+// ✅ Create Booking
 const createBooking = async (request, h) => {
   try {
     const data = createBookingSchema.parse(request.payload);
@@ -11,11 +17,13 @@ const createBooking = async (request, h) => {
   }
 };
 
+// ✅ Get All Bookings
 const getAllBookings = async (request, h) => {
   const bookings = await bookingService.getAllBookings();
   return h.response(bookings);
 };
 
+// ✅ Get Booking by ID
 const getBookingById = async (request, h) => {
   try {
     const { id } = getBookingByIdSchema.parse(request.params);
@@ -27,6 +35,7 @@ const getBookingById = async (request, h) => {
   }
 };
 
+// ✅ Update Booking (full update)
 const updateBooking = async (request, h) => {
   try {
     const { id } = getBookingByIdSchema.parse(request.params);
@@ -38,6 +47,7 @@ const updateBooking = async (request, h) => {
   }
 };
 
+// ✅ Delete Booking
 const deleteBooking = async (request, h) => {
   try {
     const { id } = getBookingByIdSchema.parse(request.params);
@@ -48,10 +58,25 @@ const deleteBooking = async (request, h) => {
   }
 };
 
+// ✅ NEW: Update Booking Status (PATCH)
+const updateBookingStatus = async (request, h) => {
+  try {
+    const { id } = getBookingByIdSchema.parse(request.params);
+    const { status } = updateBookingStatusSchema.parse(request.payload);
+    const updatedBooking = await bookingService.updateBooking(id, { status });
+    return h.response(updatedBooking);
+  } catch (error) {
+    return h.response({ error: error.errors ?? error.message }).code(400);
+  }
+};
+
+
+// ✅ Export
 module.exports = {
   createBooking,
   getAllBookings,
   getBookingById,
   updateBooking,
   deleteBooking,
+  updateBookingStatus, // เพิ่มเข้า module exports
 };

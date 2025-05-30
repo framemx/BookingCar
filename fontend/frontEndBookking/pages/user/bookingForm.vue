@@ -29,6 +29,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+definePageMeta({ layout: 'user' })
 const router = useRouter()
 const date = ref('')
 const selectedSlot = ref(null)

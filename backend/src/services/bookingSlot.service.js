@@ -6,35 +6,42 @@ const createBookingSlot = async (data) => {
     data: {
       bookingId: data.bookingId,
       slotId: data.slotId,
-      startTime: new Date(data.startTime),
-      endTime: new Date(data.endTime),
-    }
+    },
   });
 };
 
 const getAllBookingSlots = async () => {
-  return await prisma.bookingSlot.findMany();
+  return await prisma.bookingSlot.findMany({
+    include: {
+      booking: true,
+      slot: true,
+    },
+  });
 };
 
 const getBookingSlotById = async (id) => {
-  return await prisma.bookingSlot.findUnique({ where: { id } });
-};
-
-const deleteBookingSlot = async (id) => {
-  return await prisma.bookingSlot.delete({ where: { id } });
+  return await prisma.bookingSlot.findUnique({
+    where: { id: Number(id) },
+    include: {
+      booking: true,
+      slot: true,
+    },
+  });
 };
 
 const updateBookingSlot = async (id, data) => {
-  const { startTime, endTime, bookingId, slotId } = data;
-
   return await prisma.bookingSlot.update({
-    where: { id },
+    where: { id: Number(id) },
     data: {
-      ...(bookingId !== undefined && { bookingId }),
-      ...(slotId !== undefined && { slotId }),
-      ...(startTime !== undefined && { startTime: new Date(startTime) }),
-      ...(endTime !== undefined && { endTime: new Date(endTime) }),
+      bookingId: data.bookingId,
+      slotId: data.slotId,
     },
+  });
+};
+
+const deleteBookingSlot = async (id) => {
+  return await prisma.bookingSlot.delete({
+    where: { id: Number(id) },
   });
 };
 
@@ -42,6 +49,6 @@ module.exports = {
   createBookingSlot,
   getAllBookingSlots,
   getBookingSlotById,
-  deleteBookingSlot,
   updateBookingSlot,
+  deleteBookingSlot,
 };
