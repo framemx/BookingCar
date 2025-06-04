@@ -3,34 +3,34 @@
     <h2>จัดการ Slot ร้าน</h2>
 
     <label>จำนวน Slot ที่ต้องการ:</label>
-    <input type="number" v-model.number="slotCount" min="1" />
+    <input type="number" v-model.number="slotCount" min="1" @change="generateSlots" />
     <button @click="generateSlots" class="btn-primary">สร้าง Slot</button>
 
     <div v-for="(slot, index) in slots" :key="index" class="slot-group">
       <div class="slot-inputs">
         <div class="form-control">
           <label :for="'date-' + index">วันที่</label>
-          <input type="date" :id="'date-' + index" v-model="slot.date" />
+          <input type="date" :id="'date-' + index" v-model="slots[index].date" required />
         </div>
 
         <div class="form-control">
           <label :for="'start-' + index">เวลาเริ่มต้น (24 ชม.)</label>
-          <input type="time" :id="'start-' + index" v-model="slot.startTime" />
+          <input type="time" :id="'start-' + index" v-model="slots[index].startTime" required />
         </div>
 
         <div class="form-control">
           <label :for="'end-' + index">เวลาสิ้นสุด (24 ชม.)</label>
-          <input type="time" :id="'end-' + index" v-model="slot.endTime" />
+          <input type="time" :id="'end-' + index" v-model="slots[index].endTime" required />
         </div>
 
         <div class="form-control">
           <label :for="'name-' + index">ชื่อ Slot</label>
-          <input type="text" :id="'name-' + index" v-model="slot.slotName" />
+          <input type="text" :id="'name-' + index" v-model="slots[index].slotName" required />
         </div>
 
         <div class="form-control">
           <label :for="'status-' + index">สถานะ</label>
-          <select :id="'status-' + index" v-model="slot.status">
+          <select :id="'status-' + index" v-model="slots[index].status" required>
             <option value="AVAILABLE">Available</option>
             <option value="BOOKED">Booked</option>
           </select>
@@ -45,37 +45,57 @@
 </template>
 
 <script setup>
+
 import { ref } from 'vue'
 definePageMeta({ layout: 'admin' })
 const slotCount = ref(1)
 const slots = ref([])
 
 function generateSlots() {
-  slots.value = []
-  for (let i = 0; i < slotCount.value; i++) {
-    slots.value.push({
-      date: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
-      startTime: '09:00',
-      endTime: '10:00',
-      slotName: `Slot ${i + 1}`,
-      status: 'AVAILABLE'
-    })
-  }
+  slots.value = Array.from({ length: slotCount.value }, (_, index) => ({
+    date: "2025-06-04",
+    startTime: '09:00',
+    endTime: '16:00',
+    slotName: `Slot ${index + 1}`,
+    status: 'AVAILABLE'
+  }))
+  console.log('Slots generated:', slots.value)
 }
 
 function removeSlot(index) {
   slots.value.splice(index, 1)
 }
 
-function saveSlots() {
-  slots.value.forEach(async (slot) => {
+async function saveSlots() {
+  console.log('Slots before saving:', slots.value)
+
+  if (!slots.value.length) {
+    alert('กรุณาสร้าง Slot ก่อนบันทึก')
+    return
+  }
+
+  for (const slot of slots.value) {
+    if (!slot.date || !slot.startTime || !slot.endTime || !slot.slotName || !slot.status) {
+      alert(`กรุณากรอกข้อมูลให้ครบถ้วนสำหรับ Slot "${slot.slotName || 'Unnamed'}"`)
+      return
+    }
+
+    const start = new Date(`${slot.date}T${slot.startTime}:00+07:00`)
+    const end = new Date(`${slot.date}T${slot.endTime}:00+07:00`)
+    if (start >= end) {
+      alert(`Slot "${slot.slotName}": เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด`)
+      return
+    }
+
     const payload = {
       slotName: slot.slotName,
-      date: new Date(`${slot.date}T00:00:00`).toISOString(),
-      startTime: new Date(`${slot.date}T${slot.startTime}:00`).toISOString(),
-      endTime: new Date(`${slot.date}T${slot.endTime}:00`).toISOString(),
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
       status: slot.status
     }
+
+    console.log('Payload to send:', payload)
 
     try {
       const res = await fetch('http://localhost:3000/slots', {
@@ -83,21 +103,23 @@ function saveSlots() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-
+      
+      const responseData = await res.json()
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(`ไม่สามารถบันทึก slot: ${errorData.message}`)
+        console.error('API Response:', responseData)
+        throw new Error(`ไม่สามารถบันทึก slot: ${responseData.error || 'ข้อมูลไม่ถูกต้อง'}`)
       }
 
-      console.log('บันทึกสำเร็จ:', payload)
+      console.log('บันทึกสำเร็จ:', responseData)
     } catch (err) {
-      console.error(err.message)
+      console.error('Error saving slot:', err.message)
+      alert(err.message)
+      return
     }
-  })
+  }
 
-  alert('กำลังบันทึก Slot ทั้งหมด...')
+  alert('บันทึก Slot ทั้งหมดเรียบร้อยแล้ว')
 }
-
 </script>
 
 <style scoped>

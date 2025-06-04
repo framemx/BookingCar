@@ -67,7 +67,7 @@ model BookingService {
 
   model Slot {
     id           Int           @id @default(autoincrement())
-    date         DateTime
+    date         String
     startTime    DateTime
     endTime      DateTime
     slotName     String        @default("Unnamed Slot") // เช่น "Slot 1"

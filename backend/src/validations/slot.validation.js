@@ -5,20 +5,26 @@ const createSlotSchema = z.object({
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
-  startTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid start time format",
+  startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: "Invalid start time format (must be HH:mm)",
   }),
-  endTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid end time format",
+  endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: "Invalid end time format (must be HH:mm)",
   }),
-  status: z.enum(["AVAILABLE", "BOOKED"]).optional(), // หรือใช้ z.string() ก็ได้ถ้าไม่ต้องการ strict
+  status: z.enum(["AVAILABLE", "BOOKED"]).optional(),
 });
 
 const updateSlotSchema = z.object({
   slotName: z.string().min(1).optional(),
-  date: z.string().optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid date format",
+  }).optional(),
+  startTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: "Invalid start time format (must be HH:mm)",
+  }).optional(),
+  endTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: "Invalid end time format (must be HH:mm)",
+  }).optional(),
   status: z.enum(["AVAILABLE", "BOOKED"]).optional(),
 });
 

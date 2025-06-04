@@ -26,4 +26,10 @@ module.exports = [
   path: '/slots/{id}',
   handler: slotController.updateSlot,
   },
+  {
+  method: 'GET',
+  path: '/slots/{id}/times',
+  handler: slotController.getSlotTimes,
+}
+
 ];
