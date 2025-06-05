@@ -21,10 +21,11 @@ const createSlot = async (request, h) => {
 
 const getAllSlots = async (request, h) => {
   const slots = await slotService.getAllSlots();
+  // ไม่ต้องแปลงเวลาจาก string เป็น Date อีก เพราะเก็บเป็น HH:mm แล้ว
   const formattedSlots = slots.map(slot => ({
     ...slot,
-    startTime: new Date(slot.startTime).toTimeString().slice(0, 5),
-    endTime: new Date(slot.endTime).toTimeString().slice(0, 5),
+    startTime: slot.startTime,
+    endTime: slot.endTime,
   }));
   console.log('Fetched slots:', formattedSlots);
   return h.response(formattedSlots);
@@ -37,8 +38,8 @@ const getSlotById = async (request, h) => {
     if (!slot) return h.response({ error: 'Slot not found' }).code(404);
     const formattedSlot = {
       ...slot,
-      startTime: new Date(slot.startTime).toTimeString().slice(0, 5),
-      endTime: new Date(slot.endTime).toTimeString().slice(0, 5),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
     };
     console.log('Fetched slot by ID:', formattedSlot);
     return h.response(formattedSlot);
@@ -67,8 +68,8 @@ const updateSlot = async (request, h) => {
     const updatedSlot = await slotService.updateSlot(id, data);
     const formattedSlot = {
       ...updatedSlot,
-      startTime: new Date(updatedSlot.startTime).toTimeString().slice(0, 5),
-      endTime: new Date(updatedSlot.endTime).toTimeString().slice(0, 5),
+      startTime: updatedSlot.startTime,
+      endTime: updatedSlot.endTime,
     };
     console.log('Updated slot:', formattedSlot);
     return h.response(formattedSlot);
@@ -84,28 +85,49 @@ const getSlotTimes = async (request, h) => {
     const slot = await slotService.getSlotById(id);
     if (!slot) return h.response({ error: 'Slot not found' }).code(404);
 
+    const bookings = await slotService.getBookingsBySlotId(id); // ✅ ดึง booking
+
+    // แปลงช่วงเวลาของ booking ที่มีอยู่แล้ว
+    const bookedTimes = bookings.map(booking => ({
+      from: booking.startTime, // สมมุติเป็น "10:00"
+      to: booking.endTime,     // สมมุติเป็น "11:00"
+    }));
+
     const result = [];
-    let start = new Date(slot.startTime);
-    const end = new Date(slot.endTime);
+    let [startHour, startMin] = slot.startTime.split(':').map(Number);
+    let [endHour, endMin] = slot.endTime.split(':').map(Number);
+
+    let start = new Date();
+    start.setHours(startHour, startMin, 0, 0);
+
+    const end = new Date();
+    end.setHours(endHour, endMin, 0, 0);
 
     while (start < end) {
-      const next = new Date(start.getTime() + 60 * 60 * 1000);
-      if (next <= end) {
-        result.push({
-          from: start.toTimeString().slice(0, 5),
-          to: next.toTimeString().slice(0, 5),
-        });
+      const next = new Date(start.getTime() + 60 * 60 * 1000); // +1hr
+
+      const fromStr = start.toTimeString().slice(0, 5);
+      const toStr = next.toTimeString().slice(0, 5);
+
+      const isBooked = bookedTimes.some(booked =>
+        booked.from === fromStr && booked.to === toStr
+      );
+
+      if (!isBooked && next <= end) {
+        result.push({ from: fromStr, to: toStr });
       }
+
       start = next;
     }
 
-    console.log('Slot times for ID', id, ':', result);
+    console.log('Available slot times for ID', id, ':', result);
     return h.response(result);
   } catch (error) {
     console.error('Error in getSlotTimes:', error);
     return h.response({ error: error.errors ?? error.message }).code(400);
   }
 };
+
 
 module.exports = {
   createSlot,

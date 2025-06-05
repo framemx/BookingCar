@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // ฟังก์ชันเช็ค slot ว่าง
@@ -33,12 +33,19 @@ const checkServicesExist = async (tx, services) => {
   });
 
   if (servicesExist.length !== services.length) {
-    throw new Error('One or more selected services do not exist');
+    throw new Error("One or more selected services do not exist");
   }
 };
 
 const createBooking = async (data) => {
-  const { userId, bookingDate, status, description, services = [], slots = [] } = data;
+  const {
+    userId,
+    bookingDate,
+    status,
+    description,
+    services = [],
+    slots = [],
+  } = data;
 
   return await prisma.$transaction(async (tx) => {
     // ตรวจสอบ slot และ service ก่อนสร้าง
@@ -69,6 +76,7 @@ const createBooking = async (data) => {
         startTime: new Date(startTime),
         endTime: new Date(endTime),
       }));
+
       await tx.bookingSlot.createMany({ data: bookingSlotsData });
     }
 
@@ -103,7 +111,8 @@ const updateBooking = async (id, data) => {
   return await prisma.$transaction(async (tx) => {
     const updateData = {};
     if (status !== undefined) updateData.status = status;
-    if (bookingDate !== undefined) updateData.bookingDate = new Date(bookingDate);
+    if (bookingDate !== undefined)
+      updateData.bookingDate = new Date(bookingDate);
     if (description !== undefined) updateData.description = description;
 
     // ถ้ามี services หรือ slots ให้ตรวจสอบก่อนอัปเดต
@@ -144,8 +153,44 @@ const updateBooking = async (id, data) => {
 };
 
 const deleteBooking = async (id) => {
-  return await prisma.booking.delete({ where: { id } });
+  return await prisma.$transaction(async (tx) => {
+    // 🧹 ลบ bookingSlots ที่เกี่ยวข้อง
+    await tx.bookingSlot.deleteMany({ where: { bookingId: id } });
+
+    // 🧹 ลบ bookingServices ที่เกี่ยวข้อง
+    await tx.bookingService.deleteMany({ where: { bookingId: id } });
+
+    // ✅ ลบ booking หลัก
+    return await tx.booking.delete({ where: { id } });
+  });
 };
+
+
+const getBookingsByEmail = async (email) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return [];
+
+  return await prisma.booking.findMany({
+    where: { userId: user.id },
+    include: {
+      bookingServices: { include: { service: true } },
+      bookingSlots: { include: { slot: true } },
+      user: true,
+    },
+  });
+};
+
+const getBookingsByUserId = async (userId) => {
+  return await prisma.booking.findMany({
+    where: { userId },
+    include: {
+      bookingServices: { include: { service: true } },
+      bookingSlots: { include: { slot: true } },
+      user: true,
+    },
+  });
+};
+
 
 module.exports = {
   createBooking,
@@ -153,4 +198,6 @@ module.exports = {
   getBookingById,
   updateBooking,
   deleteBooking,
+  getBookingsByEmail,
+  getBookingsByUserId,
 };

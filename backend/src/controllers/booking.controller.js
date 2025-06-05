@@ -1,9 +1,10 @@
+// src/controllers/booking.controller.js
 const bookingService = require('../services/booking.service');
 const {
   createBookingSchema,
   getBookingByIdSchema,
   updateBookingSchema,
-  updateBookingStatusSchema, // ✅ เพิ่ม schema สำหรับ PATCH
+  updateBookingStatusSchema,
 } = require('../validations/booking.validation');
 
 // ✅ Create Booking
@@ -19,8 +20,17 @@ const createBooking = async (request, h) => {
 
 // ✅ Get All Bookings
 const getAllBookings = async (request, h) => {
-  const bookings = await bookingService.getAllBookings();
-  return h.response(bookings);
+  const { userEmail, userId } = request.query;
+
+  if (userEmail) {
+    return await bookingService.getBookingsByEmail(userEmail);
+  }
+
+  if (userId) {
+    return await bookingService.getBookingsByUserId(Number(userId));
+  }
+
+  return await bookingService.getAllBookings();
 };
 
 // ✅ Get Booking by ID
@@ -50,18 +60,26 @@ const updateBooking = async (request, h) => {
 // ✅ Delete Booking
 const deleteBooking = async (request, h) => {
   try {
-    const { id } = getBookingByIdSchema.parse(request.params);
+    const { id } = getBookingByIdSchema.parse({
+      id: request.params.id, // 👈 parse ใหม่ตรงๆ
+    });
+
     const deleted = await bookingService.deleteBooking(id);
     return h.response(deleted);
   } catch (error) {
-    return h.response({ error: error.errors ?? error.message }).code(400);
+    console.error("Error deleting:", error); // 👈 log เพื่อ debug
+    return h
+      .response({ error: error.errors ?? error.message })
+      .code(400);
   }
 };
 
-// ✅ NEW: Update Booking Status (PATCH)
+
+// ✅ Update Booking Status (PATCH)
 const updateBookingStatus = async (request, h) => {
   try {
-    const { id } = getBookingByIdSchema.parse(request.params);
+    const { id } = getBookingByIdSchema.parse({ id: Number(request.params.id) });
+
     const { status } = updateBookingStatusSchema.parse(request.payload);
     const updatedBooking = await bookingService.updateBooking(id, { status });
     return h.response(updatedBooking);
@@ -70,13 +88,11 @@ const updateBookingStatus = async (request, h) => {
   }
 };
 
-
-// ✅ Export
 module.exports = {
   createBooking,
   getAllBookings,
   getBookingById,
   updateBooking,
   deleteBooking,
-  updateBookingStatus, // เพิ่มเข้า module exports
+  updateBookingStatus,
 };

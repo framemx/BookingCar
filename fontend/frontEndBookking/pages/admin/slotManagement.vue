@@ -45,15 +45,25 @@
 </template>
 
 <script setup>
-
 import { ref } from 'vue'
 definePageMeta({ layout: 'admin' })
+
 const slotCount = ref(1)
 const slots = ref([])
 
+// ฟังก์ชันช่วยแปลงวันที่ปัจจุบันเป็นรูปแบบ YYYY-MM-DD
+function getTodayDateString() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function generateSlots() {
+  const todayStr = getTodayDateString()
   slots.value = Array.from({ length: slotCount.value }, (_, index) => ({
-    date: "2025-06-04",
+    date: todayStr,            // ตั้งเป็นวันที่ปัจจุบันเสมอ
     startTime: '09:00',
     endTime: '16:00',
     slotName: `Slot ${index + 1}`,
@@ -80,8 +90,8 @@ async function saveSlots() {
       return
     }
 
-    const start = new Date(`${slot.date}T${slot.startTime}:00+07:00`)
-    const end = new Date(`${slot.date}T${slot.endTime}:00+07:00`)
+    const start = new Date(`${slot.date}T${slot.startTime}:00+08:00`)
+    const end = new Date(`${slot.date}T${slot.endTime}:00+08:00`)
     if (start >= end) {
       alert(`Slot "${slot.slotName}": เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด`)
       return
@@ -123,6 +133,7 @@ async function saveSlots() {
 </script>
 
 <style scoped>
+/* รักษาสไตล์เดิมไว้ */
 .container {
   max-width: 700px;
   margin: 2rem auto;

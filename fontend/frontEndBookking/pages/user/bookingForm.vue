@@ -3,40 +3,36 @@
     <h1 class="heading">📅 จองคิวบริการ</h1>
 
     <form @submit.prevent="submitBooking" class="form">
-      <!-- วันที่ -->
       <div class="form-group">
         <label for="date">เลือกวันที่</label>
-        <input
-          type="date"
-          id="date"
-          v-model="date"
-          :min="minDate"
-          required
-        />
+        <input type="date" id="date" v-model="date" :min="minDate" required />
       </div>
 
-      <!-- Slot เวลา -->
       <div class="form-group">
         <label for="slot">เลือกเวลาที่ต้องการ</label>
         <select id="slot" v-model="selectedSlot" required>
           <option value="" disabled>-- กรุณาเลือกเวลา --</option>
-          <option v-for="(slot, idx) in availableSlots" :key="idx" :value="slot">
-            {{ slot.start }} - {{ slot.end }}
+          <option
+            v-for="slot in availableSlots"
+            :key="slot.slotId + slot.start"
+            :value="slot"
+          >
+            เวลา {{ slot.start }}
           </option>
         </select>
-        <p v-if="availableSlots.length === 0" class="error-message">ไม่มีเวลาให้เลือกสำหรับวันที่นี้</p>
+        <p v-if="availableSlots.length === 0" class="error-message">
+          ไม่มีเวลาให้เลือกสำหรับวันที่นี้
+        </p>
       </div>
 
-      <!-- รายการบริการ (ไม่มี scroll bar) -->
       <div class="form-group">
         <label>เลือกบริการ (เลือกได้หลายรายการ)</label>
-        <div class="services-grid" v-if="services.length > 0" :style="{ maxHeight: 'none', overflowY: 'visible' }">
+        <div class="services-grid">
           <label
             v-for="service in services"
             :key="service.id"
             class="service-card"
             :class="{ selected: selectedServices.includes(service.id) }"
-            tabindex="0"
           >
             <input
               type="checkbox"
@@ -54,21 +50,21 @@
             </div>
           </label>
         </div>
-        <p v-else class="no-service">ไม่มีบริการให้เลือก</p>
+        <p v-if="services.length === 0" class="no-service">
+          ไม่มีบริการให้เลือก
+        </p>
       </div>
 
-      <!-- สรุป -->
       <div class="summary" v-if="selectedServices.length > 0">
-        <p>⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที</p>
-        <p>💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท</p>
+        <p>
+          ⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที
+        </p>
+        <p>
+          💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท
+        </p>
       </div>
 
-      <!-- ปุ่มยืนยัน -->
-      <button
-        class="btn-submit"
-        :disabled="!canSubmit"
-        type="submit"
-      >
+      <button class="btn-submit" :disabled="!canSubmit" type="submit">
         ยืนยันการจอง
       </button>
     </form>
@@ -76,160 +72,130 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+
 definePageMeta({ layout: "user" });
-interface Service {
-  id: number
-  sName: string
-  description: string
-  price: number
-  durationMinutes: number
-}
 
-interface Slot {
-  start: string
-  end: string
-}
+const router = useRouter();
+const date = ref("");
+const selectedSlot = ref(null);
+const selectedServices = ref<number[]>([]);
+const services = ref([]);
+const slots = ref([]);
+const minDate = new Date().toISOString().slice(0, 10);
 
-const date = ref('')
-const selectedSlot = ref('')
-const selectedServices = ref<number[]>([])
-const services = ref<Service[]>([])
-const slots = ref<any[]>([])
-const minDate = new Date().toISOString().slice(0, 10)
+const timeToMinutes = (t: string) =>
+  t
+    .split(":")
+    .map(Number)
+    .reduce((h, m) => h * 60 + m);
+const minutesToTime = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(
+    2,
+    "0"
+  )}`;
 
-async function fetchSlots() {
-  try {
-    const res = await fetch('http://localhost:3000/slots')
-    if (!res.ok) throw new Error('โหลดข้อมูล slot ไม่สำเร็จ')
-    const data = await res.json()
-    slots.value = data
-    console.log('Fetched slots:', slots.value)
-  } catch (error) {
-    alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาด')
-    console.error('Error fetching slots:', error)
-  }
-}
-
-function timeToMinutes(t: string): number {
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
-
-function minutesToTime(m: number): string {
-  const hh = Math.floor(m / 60)
-  const mm = m % 60
-  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
-}
-
-function generateHourlySlots(startTime: string, endTime: string): Slot[] {
-  const startMins = timeToMinutes(startTime)
-  const endMins = timeToMinutes(endTime)
-  const slotArr = []
-  for (let start = startMins; start < endMins; start += 60) {
-    const end = start + 60 <= endMins ? start + 60 : endMins
-    slotArr.push({ start: minutesToTime(start), end: minutesToTime(end) })
-  }
-  return slotArr
-}
+const generateHourlySlots = (start: string, end: string) => {
+  const out = [],
+    s = timeToMinutes(start),
+    e = timeToMinutes(end);
+  for (let i = s; i < e; i += 60)
+    out.push({
+      start: minutesToTime(i),
+      end: minutesToTime(Math.min(i + 60, e)),
+    });
+  return out;
+};
 
 const availableSlots = computed(() => {
-  if (!date.value || !slots.value.length) {
-    console.log('No date or slots available:', { date: date.value, slotsLength: slots.value.length })
-    return []
-  }
-  const selectedDate = date.value
-  console.log('Selected date:', selectedDate)
-  console.log('All slots:', slots.value)
-  const available = slots.value
-    .filter(slot => {
-      const slotDate = slot.date
-      console.log(`Comparing: selected=${selectedDate}, slot=${slotDate}, status=${slot.status}`)
-      return slotDate === selectedDate && slot.status === 'AVAILABLE'
-    })
-    .map(slot => {
-      const start = slot.startTime
-      const end = slot.endTime
-      console.log(`Mapping slot: ${start} - ${end}, Date: ${slot.date}`)
-      if (!start || !end) {
-        console.warn(`Invalid slot times for date ${slot.date}: start=${start}, end=${end}`)
-        return null
-      }
-      return generateHourlySlots(start, end)
-    })
-    .flat()
-  console.log('Final available slots:', available)
-  return available
-})
+  if (!date.value) return [];
+  return slots.value
+    .filter((s) => s.date === date.value && s.status === "AVAILABLE")
+    .flatMap((slot) =>
+      generateHourlySlots(slot.startTime, slot.endTime).map((s) => ({
+        ...s,
+        slotId: slot.id,
+      }))
+    );
+});
 
-async function fetchServices() {
-  try {
-    const res = await fetch('http://localhost:3000/services')
-    if (!res.ok) throw new Error('โหลดข้อมูลบริการไม่สำเร็จ')
-    const data = await res.json()
-    services.value = data.data || []
-  } catch (error) {
-    alert(error instanceof Error ? error.message : 'เกิดข้อผิดพลาด')
-  }
-}
-
-const totalDuration = computed(() => {
-  return selectedServices.value.reduce((sum, id) => {
-    const svc = services.value.find(s => s.id === id)
-    return svc ? sum + svc.durationMinutes : sum
+const totalDuration = computed(() =>
+  selectedServices.value.reduce((sum, id) => {
+    const svc = services.value.find((s) => s.id === id);
+    return svc ? sum + svc.durationMinutes : sum;
   }, 0)
-})
+);
 
-const totalPrice = computed(() => {
-  return selectedServices.value.reduce((sum, id) => {
-    const svc = services.value.find(s => s.id === id)
-    return svc ? sum + svc.price : sum
+const totalPrice = computed(() =>
+  selectedServices.value.reduce((sum, id) => {
+    const svc = services.value.find((s) => s.id === id);
+    return svc ? sum + svc.price : sum;
   }, 0)
-})
+);
 
-const canSubmit = computed(() => {
-  return date.value !== '' && selectedSlot.value !== '' && selectedServices.value.length > 0
-})
+const canSubmit = computed(
+  () => date.value && selectedSlot.value && selectedServices.value.length > 0
+);
 
-async function submitBooking() {
-  try {
-    const bookingData = {
-      date: date.value,
-      slot: selectedSlot.value,
-      services: selectedServices.value,
-      totalDuration: totalDuration.value,
-      totalPrice: totalPrice.value,
-    }
-    const res = await fetch('http://localhost:3000/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookingData),
-    })
-    if (!res.ok) {
-      const errData = await res.json()
-      throw new Error(errData.message || 'จองคิวไม่สำเร็จ')
-    }
-    alert('จองคิวสำเร็จ 🎉')
-    date.value = ''
-    selectedSlot.value = ''
-    selectedServices.value = []
-  } catch (err) {
-    alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด')
-  }
-}
+const fetchSlots = async () => {
+  const res = await fetch("http://localhost:3000/slots");
+  if (!res.ok) return alert("โหลด slot ไม่สำเร็จ");
+  slots.value = await res.json();
+};
+
+const fetchServices = async () => {
+  const res = await fetch("http://localhost:3000/services");
+  const data = await res.json();
+  services.value = data.data || [];
+};
+
+const submitBooking = async () => {
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  if (!userData?.id) return alert("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบ");
+
+  const payload = {
+    userId: userData.id,
+    bookingDate: date.value,
+    status: "PENDING",
+    description: "",
+    services: selectedServices.value,
+    slots: [
+      {
+        slotId: selectedSlot.value.slotId,
+        startTime: `${date.value}T${selectedSlot.value.start}:00`,
+        endTime: `${date.value}T${selectedSlot.value.end}:00`,
+      },
+    ],
+  };
+
+  const res = await fetch("http://localhost:3000/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const booking = await res.json();
+  if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
+
+  router.push({
+    path: "/user/bookingWelcome",
+    query: { bookingId: booking.id },
+  });
+};
 
 onMounted(() => {
-  fetchSlots()
-  fetchServices()
-})
+  fetchSlots();
+  fetchServices();
+});
 
 watch(date, () => {
-  selectedSlot.value = ''
-})
+  selectedSlot.value = null;
+});
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap");
 
 .container {
   max-width: 720px;
@@ -238,7 +204,7 @@ watch(date, () => {
   background: #f9fcff;
   border-radius: 15px;
   box-shadow: 0 10px 25px rgba(0, 123, 255, 0.22);
-  font-family: 'Sarabun', sans-serif;
+  font-family: "Sarabun", sans-serif;
   color: #102a43;
   user-select: none;
 }
@@ -271,7 +237,7 @@ watch(date, () => {
   user-select: none;
 }
 
-input[type='date'],
+input[type="date"],
 select {
   padding: 0.6rem 1rem;
   font-size: 1rem;
@@ -283,7 +249,7 @@ select {
   outline-offset: 3px;
 }
 
-input[type='date']:focus,
+input[type="date"]:focus,
 select:focus {
   border-color: #3b82f6;
   background-color: #dbeafe;
@@ -348,7 +314,7 @@ select:focus {
 }
 
 .service-checkbox:checked::after {
-  content: '✔';
+  content: "✔";
   display: block;
   color: white;
   font-weight: 700;
@@ -432,4 +398,4 @@ select:focus {
   background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
   box-shadow: 0 10px 30px #2563ebdd;
 }
-</style>  
+</style>

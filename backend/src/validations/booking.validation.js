@@ -20,8 +20,9 @@ const createBookingSchema = z.object({
 });
 
 const getBookingByIdSchema = z.object({
-  id: z.string().regex(/^\d+$/, 'Id must be a number string').transform(Number),
-});
+  id: z.coerce.number(), // ✅ แปลงเป็น number อัตโนมัติ
+})
+
 
 const updateBookingSchema = z.object({
   status: z.string().optional(),
