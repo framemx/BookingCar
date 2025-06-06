@@ -2,27 +2,31 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // ฟังก์ชันเช็ค slot ว่าง
+// ✅ แก้ไข checkSlotAvailability ให้เช็กซ้ำซ้อนของเวลา
 const checkSlotAvailability = async (tx, slots) => {
-  for (const { slotId } of slots) {
-    // ดึงข้อมูล slot พร้อมนับจำนวน booking ที่มีอยู่
-    const slot = await tx.slot.findUnique({
-      where: { id: slotId },
-      include: {
-        bookingSlots: true,
-      },
-    });
-
-    if (!slot) {
-      throw new Error(`Slot with id ${slotId} does not exist`);
+  for (const { slotId, startTime, endTime } of slots) {
+    const overlapping = await tx.bookingSlot.count({
+  where: {
+    slotId,
+    startTime: { lt: new Date(endTime) },
+    endTime: { gt: new Date(startTime) },
+    booking: {
+      status: 'confirmed'  // ✅ เช็กเฉพาะ booking ที่ยืนยันแล้วเท่านั้น
     }
+  },
+});
 
-    const currentBookingsCount = slot.bookingSlots.length;
 
-    if (currentBookingsCount >= slot.capacity) {
+    const slot = await tx.slot.findUnique({ where: { id: slotId } });
+
+    if (!slot) throw new Error(`Slot ${slotId} not found`);
+
+    if (overlapping >= slot.capacity) {
       throw new Error(`Slot ${slotId} is fully booked`);
     }
   }
 };
+
 
 // ฟังก์ชันเช็ค services ว่ามีอยู่จริง
 const checkServicesExist = async (tx, services) => {
@@ -48,7 +52,6 @@ const createBooking = async (data) => {
   } = data;
 
   return await prisma.$transaction(async (tx) => {
-    // ตรวจสอบ slot และ service ก่อนสร้าง
     await checkServicesExist(tx, services);
     await checkSlotAvailability(tx, slots);
 
@@ -61,6 +64,7 @@ const createBooking = async (data) => {
       },
     });
 
+    // บริการ
     if (services.length > 0) {
       const bookingServicesData = services.map((serviceId) => ({
         bookingId: booking.id,
@@ -69,13 +73,25 @@ const createBooking = async (data) => {
       await tx.bookingService.createMany({ data: bookingServicesData });
     }
 
+    // ✅ slot
     if (slots.length > 0) {
-      const bookingSlotsData = slots.map(({ slotId, startTime, endTime }) => ({
-        bookingId: booking.id,
-        slotId,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-      }));
+      const bookingSlotsData = [];
+
+      for (const { slotId, startTime, endTime } of slots) {
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        while (start < end) {
+          const next = new Date(start.getTime() + 60 * 60 * 1000); // +1h
+          bookingSlotsData.push({
+            bookingId: booking.id,
+            slotId,
+            startTime: new Date(start),
+            endTime: new Date(next),
+          });
+          start.setTime(next.getTime());
+        }
+      }
 
       await tx.bookingSlot.createMany({ data: bookingSlotsData });
     }
@@ -83,6 +99,7 @@ const createBooking = async (data) => {
     return booking;
   });
 };
+
 
 const getAllBookings = async () => {
   return await prisma.booking.findMany({

@@ -86,7 +86,6 @@
 </template>
 
 <script setup lang="ts">
-
 definePageMeta({ layout: 'admin' })
 
 import { ref, reactive, onMounted } from "vue";
@@ -242,70 +241,72 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-container {
-  max-width: 960px;
-  margin: 3rem auto; /* เพิ่มระยะบนล่าง */
-  padding: 2rem;      /* เพิ่ม padding รอบกล่อง */
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  margin: 4rem auto;
+  padding: 2.5rem;
+  background-color: #f9fafb;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   font-family: "Sarabun", sans-serif;
-  color: #333333;
-}
-
-/* หัวข้อ */
-.dashboard-container h1 {
-  font-weight: 700;
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 2rem; /* เพิ่ม margin bottom */
   color: #1e293b;
 }
 
-/* ฟอร์ม */
+.dashboard-container h1 {
+  font-weight: 800;
+  font-size: 2.75rem;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .user-form {
-  background-color: #f9fafb;
-  padding: 2rem;        /* เพิ่ม padding */
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.1);
-  margin-bottom: 3rem;  /* เพิ่ม margin bottom */
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.1);
+  margin-bottom: 3.5rem;
 }
 
 .user-form h2 {
-  font-weight: 600;
-  font-size: 1.5rem;    /* ขยายขนาดหัวข้อฟอร์ม */
-  color: #334155;
-  margin-bottom: 1.5rem; /* เพิ่ม margin */
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: #1e40af;
+  margin-bottom: 2rem;
+  text-align: center;
 }
 
-/* อินพุตและเซเล็คต์ */
 .user-form input,
 .user-form select {
   width: 100%;
-  padding: 0.75rem 1.25rem; /* เพิ่ม padding */
-  border: 1.5px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 1.1rem;       /* เพิ่มขนาดตัวอักษร */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  margin-bottom: 1.25rem;  /* เพิ่มระยะห่างระหว่าง input */
+  padding: 1rem 1.5rem;
+  border: 2px solid #e0e7ff;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  background-color: #f9fafb;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .user-form input:focus,
 .user-form select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 5px 2px rgba(59, 130, 246, 0.4);
+  border-color: #2563eb;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+  background-color: #ffffff;
 }
 
-/* ปุ่ม */
 .user-form button {
-  padding: 0.75rem 2rem;  /* เพิ่มขนาดปุ่ม */
-  font-weight: 600;
-  font-size: 1.1rem;
-  border-radius: 8px;
+  padding: 1rem 2.5rem;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   border: none;
-  user-select: none;
+  display: inline-block;
+  margin-right: 1.5rem;
 }
 
 .user-form button[type="submit"] {
@@ -315,43 +316,42 @@ onMounted(() => {
 
 .user-form button[type="submit"]:hover {
   background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(29, 78, 216, 0.3);
 }
 
 .user-form button[type="button"] {
-  background-color: #6b7280;
+  background-color: #64748b;
   color: white;
 }
 
 .user-form button[type="button"]:hover {
-  background-color: #4b5563;
+  background-color: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);
 }
 
-.user-form .mt-6.flex {
-  gap: 1.5rem; /* เพิ่มระยะห่างระหว่างปุ่ม */
-}
-
-/* ตาราง */
 .user-table {
   width: 100%;
-  border-collapse: separate; /* เปลี่ยนเป็น separate เพื่อใช้ border-spacing */
-  border-spacing: 0 0.75rem;  /* เว้นช่องว่างระหว่างแถวตาราง */
-  font-size: 1rem;
-  color: #475569;
+  border-collapse: separate;
+  border-spacing: 0 1rem;
+  font-size: 1.1rem;
+  color: #1e293b;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .user-table thead {
-  background-color: #2563eb;
+  background-color: #1e40af;
   color: white;
-  border-radius: 12px;
+  font-weight: 700;
 }
 
 .user-table th,
 .user-table td {
-  padding: 1rem 1.5rem; /* เพิ่ม padding ช่องตาราง */
-  background-color: white;
+  padding: 1.25rem 2rem;
+  background-color: #ffffff;
   text-align: left;
   vertical-align: middle;
   border-bottom: none;
@@ -359,57 +359,68 @@ onMounted(() => {
 
 .user-table tbody tr {
   border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .user-table tbody tr:hover {
-  background-color: #f1f5f9;
+  background-color: #e0e7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* ปุ่มแก้ไข-ลบในตาราง */
 .user-table button {
-  padding: 0.4rem 1rem;  /* ขยายขนาดปุ่ม */
+  padding: 0.6rem 1.5rem;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  user-select: none;
+  transition: all 0.3s ease;
+  margin-right: 1rem;
 }
 
 .user-table button:nth-child(1) {
-  background-color: #fbbf24; /* เหลือง */
+  background-color: #f59e0b;
   color: white;
 }
 
 .user-table button:nth-child(1):hover {
-  background-color: #f59e0b;
+  background-color: #d97706;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
 .user-table button:nth-child(2) {
-  background-color: #dc2626; /* แดง */
+  background-color: #dc2626;
   color: white;
 }
 
 .user-table button:nth-child(2):hover {
   background-color: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
 }
 
-/* ข้อความแจ้งเตือน */
 .error-message {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
-  color: #b91c1c;
-  font-weight: 600;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 1rem;
+  background-color: #fee2e2;
+  border-radius: 8px;
 }
 
 .success-message {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
   color: #16a34a;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 1rem;
+  background-color: #d1fae5;
+  border-radius: 8px;
 }
 </style>
-

@@ -242,7 +242,7 @@ onMounted(fetchSlots);
 
 <style scoped>
 .container {
-  max-width: 700px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem 2.5rem;
   background: #fff;

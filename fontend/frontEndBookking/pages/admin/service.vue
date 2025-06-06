@@ -239,160 +239,203 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* สไตล์เหมือนเดิม */
 .container {
-  max-width: 960px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 2rem;
   font-family: "Sarabun", sans-serif;
   color: #1e293b;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
   text-align: center;
-  color: #2563eb;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 .btn-add {
-  background-color: #2563eb;
+  background-color: #1e40af;
   color: white;
   border: none;
-  padding: 0.5rem 1.2rem;
-  font-weight: 600;
-  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-bottom: 1.5rem;
+  transition: background-color 0.3s ease, transform 0.2s;
+  margin-bottom: 2rem;
   display: block;
   margin-left: auto;
+  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
 }
 .btn-add:hover {
-  background-color: #1e40af;
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
 }
 table {
   width: 100%;
   border-collapse: collapse;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
-  background-color: white;
-  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  background-color: #f9fafb;
+  border-radius: 12px;
   overflow: hidden;
 }
 thead {
-  background-color: #2563eb;
+  background-color: #1e40af;
   color: white;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.1rem;
 }
 th, td {
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.5rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 1rem;
 }
 tbody tr:hover {
-  background-color: #f1f5f9;
+  background-color: #e0e7ff;
+  transition: background-color 0.3s ease;
 }
 .btn-edit {
   background-color: #3b82f6;
   color: white;
   border: none;
-  padding: 0.35rem 0.8rem;
-  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
-  margin-right: 0.5rem;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
+  margin-right: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 .btn-edit:hover {
   background-color: #2563eb;
+  transform: translateY(-2px);
 }
 .btn-delete {
   background-color: #ef4444;
   color: white;
   border: none;
-  padding: 0.35rem 0.8rem;
-  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 .btn-delete:hover {
-  background-color: #b91c1c;
+  background-color: #dc2626;
+  transform: translateY(-2px);
 }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 .modal {
-  background-color: white;
-  padding: 1.75rem 2rem;
-  border-radius: 12px;
-  max-width: 420px;
+  background-color: #ffffff;
+  padding: 2.5rem 3rem;
+  border-radius: 15px;
+  max-width: 500px;
   width: 90%;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
   font-family: "Sarabun", sans-serif;
+  animation: fadeIn 0.3s ease-in-out;
 }
 .modal h2, .modal h3 {
-  margin-bottom: 1rem;
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #1e40af;
+  font-weight: 800;
+  font-size: 1.8rem;
+  text-align: center;
 }
 .modal p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   color: #334155;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  text-align: center;
 }
 .modal form div {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 .modal label {
   display: block;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  font-size: 1.1rem;
+  color: #1e293b;
 }
 .modal input,
 .modal textarea {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1.1rem;
   font-family: "Sarabun", sans-serif;
+  background-color: #f9fafb;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.modal input:focus,
+.modal textarea:focus {
+  border-color: #1e40af;
+  box-shadow: 0 0 10px rgba(30, 64, 175, 0.2);
+  outline: none;
 }
 .modal textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 80px;
 }
 .btn-submit {
-  background-color: #2563eb;
+  background-color: #1e40af;
   color: white;
   border: none;
-  padding: 0.5rem 1.2rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  margin-right: 1rem;
-  transition: background-color 0.3s ease;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-right: 1.5rem;
+  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
+  transition: background-color 0.3s ease, transform 0.2s;
 }
 .btn-submit:hover {
-  background-color: #1e40af;
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
 }
 .btn-cancel {
   background-color: #e2e8f0;
   border: none;
-  padding: 0.5rem 1.2rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.1rem;
   color: #334155;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s;
 }
 .btn-cancel:hover {
   background-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

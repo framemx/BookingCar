@@ -135,7 +135,7 @@ async function saveSlots() {
 <style scoped>
 /* รักษาสไตล์เดิมไว้ */
 .container {
-  max-width: 700px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem 2.5rem;
   background: #ffffff;
