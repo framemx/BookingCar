@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="content-wrapper">
-      <h1 class="page-title">📅 หน้าจองคิว</h1>
+      <h1 class="page-title">🗕️ หน้าจองคิว</h1>
 
       <section class="user-info">
         <p><strong>👤 ยินดีต้อนรับ:</strong> {{ userName }}</p>
@@ -12,7 +12,9 @@
         <button class="booking-button" @click="goToBookingForm">
           + จองเวลา
         </button>
-        <button class="refresh-button" @click="refreshBookings">🔄 รีเฟรช</button>
+        <button class="refresh-button" @click="refreshBookings">
+          🔄 รีเฟรช
+        </button>
       </div>
 
       <h2 class="section-title">📋 ตารางการจองของคุณ</h2>
@@ -29,7 +31,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="booking in combinedBookings" :key="booking.id" class="table-row">
+          <tr
+            v-for="booking in combinedBookings"
+            :key="booking.id"
+            class="table-row"
+          >
             <td>{{ formatDateDisplay(booking.bookingDate) }}</td>
             <td>{{ booking.start }}</td>
             <td>{{ booking.end }}</td>
@@ -42,8 +48,18 @@
               </ul>
             </td>
             <td>
-              <span :class="booking.status.toUpperCase() === 'CONFIRMED' ? 'status-confirmed' : 'status-pending'">
-                {{ booking.status.toUpperCase() === 'CONFIRMED' ? 'ยืนยันแล้ว' : 'รออนุมัติ' }}
+              <span
+                :class="
+                  booking.status.toUpperCase() === 'CONFIRMED'
+                    ? 'status-confirmed'
+                    : 'status-pending'
+                "
+              >
+                {{
+                  booking.status.toUpperCase() === "CONFIRMED"
+                    ? "ยืนยันแล้ว"
+                    : "รออนุมัติ"
+                }}
               </span>
             </td>
           </tr>
@@ -55,13 +71,19 @@
       <h2 class="section-title">เลือกวันที่</h2>
       <div class="date-picker-wrapper">
         <label class="date-input-label" for="datePicker">
-          <input id="datePicker" type="date" :min="minDate" v-model="selectedDate" class="date-input" />
-          <span class="calendar-icon">📅</span>
+          <input
+            id="datePicker"
+            type="date"
+            :min="minDate"
+            v-model="selectedDate"
+            class="date-input"
+          />
+          <span class="calendar-icon">🗓️</span>
         </label>
       </div>
 
       <h2 class="section-title">
-        📎 ตารางเวลาสำหรับวันที่ {{ formatDateDisplay(selectedDate) }}
+        📌 ตารางเวลาสำหรับวันที่ {{ formatDateDisplay(selectedDate) }}
       </h2>
 
       <table v-if="slotsOfSelectedDate.length > 0" class="slot-table">
@@ -80,8 +102,14 @@
               <td>{{ formatTime(slot.startTime) }}</td>
               <td>{{ formatTime(slot.endTime) }}</td>
               <td>
-                <span :class="slot.status === 'AVAILABLE' ? 'status-available' : 'status-booked'">
-                  {{ slot.status === 'AVAILABLE' ? 'ว่าง' : 'จองแล้ว' }}
+                <span
+                  :class="
+                    slot.status === 'AVAILABLE'
+                      ? 'status-available'
+                      : 'status-booked'
+                  "
+                >
+                  {{ slot.status === "AVAILABLE" ? "ว่าง" : "จองแล้ว" }}
                 </span>
               </td>
             </tr>
@@ -90,11 +118,16 @@
                 <div
                   v-for="sub in generateHourlySlotsWithOverlap(slot.startTime, slot.endTime, combinedBookings, slot.id)"
                   :key="sub.label"
-                  class="sub-slot">
-                  🕒 {{ sub.label }} -
-                  <span :class="sub.booked ? 'status-booked' : 'status-available'">
-                    {{ sub.booked ? 'จองแล้ว' : 'ว่าง' }}
-                  </span>
+                  class="sub-slot centered"
+                >
+                  <div class="sub-slot-content">
+                    <div class="time-label">🕒 {{ sub.label }}</div>
+                    <span
+                      :class="sub.booked ? 'status-booked' : 'status-available'"
+                    >
+                      {{ sub.booked ? "จองแล้ว" : "ว่าง" }}
+                    </span>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -108,61 +141,74 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, onMounted, computed, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
 
-const userName = ref('');
-const userEmail = ref('');
+const userName = ref("");
+const userEmail = ref("");
 const slots = ref([]);
 const latestBooking = ref(null);
-const userBookings = ref([]);
+const confirmedBookings = ref([]);
 const selectedDate = ref(new Date().toISOString().slice(0, 10));
 const minDate = selectedDate.value;
 const expandedSlotId = ref(null);
 
-definePageMeta({ layout: 'user' });
+definePageMeta({ layout: "user" });
 
 function toggleSlotDetail(slotId) {
   expandedSlotId.value = expandedSlotId.value === slotId ? null : slotId;
 }
 
 function parseTimeRange(booking) {
-  const startTimes = booking.bookingSlots.map(bs => new Date(bs.startTime));
-  const minStart = new Date(Math.min(...startTimes.map(d => d.getTime())));
-  const totalDuration = booking.bookingServices?.reduce((sum, bs) => sum + (bs.service?.durationMinutes || 0), 0) || 0;
+  const startTimes = booking.bookingSlots.map((bs) => new Date(bs.startTime));
+  const minStart = new Date(Math.min(...startTimes.map((d) => d.getTime())));
+  const totalDuration =
+    booking.bookingServices?.reduce(
+      (sum, bs) => sum + (bs.service?.durationMinutes || 0),
+      0
+    ) || 0;
   const endTime = new Date(minStart.getTime() + totalDuration * 60000);
 
   return {
-    start: minStart.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-    end: endTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-    duration: totalDuration
+    start: minStart.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    end: endTime.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    duration: totalDuration,
   };
 }
 
 const combinedBookings = computed(() => {
-  const enriched = [...userBookings.value];
-  if (latestBooking.value && !enriched.find(b => b.id === latestBooking.value.id)) {
+  const enriched = [...confirmedBookings.value];
+  if (
+    latestBooking.value &&
+    !enriched.find((b) => b.id === latestBooking.value.id)
+  ) {
     enriched.push(latestBooking.value);
   }
   return enriched
-    .map(b => ({
+    .map((b) => ({
       ...b,
-      ...parseTimeRange(b)
+      ...parseTimeRange(b),
     }))
     .sort((a, b) => new Date(a.bookingDate) - new Date(b.bookingDate));
 });
 
 const slotsOfSelectedDate = computed(() =>
-  slots.value.filter(s => s.date === selectedDate.value)
+  slots.value.filter((s) => s.date === selectedDate.value)
 );
 
-function generateHourlySlotsWithOverlap(startDate, endDate, bookings, slotId) {
+function generateHourlySlotsWithOverlap(slotStart, slotEnd, bookings, slotId) {
   const result = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = new Date(slotStart);
+  const end = new Date(slotEnd);
 
   while (start < end) {
     const next = new Date(start.getTime() + 60 * 60 * 1000);
@@ -184,17 +230,21 @@ function generateHourlySlotsWithOverlap(startDate, endDate, bookings, slotId) {
         return false;
       }
 
-      const startTime = new Date(
-        Math.min(...booking.bookingSlots.map((bs) => new Date(bs.startTime).getTime()))
+      const bookingStart = new Date(
+        Math.min(
+          ...booking.bookingSlots.map((bs) => new Date(bs.startTime).getTime())
+        )
       );
       const totalDuration =
         booking.bookingServices?.reduce(
           (sum, bs) => sum + (bs.service?.durationMinutes || 0),
           0
         ) || 0;
-      const endTime = new Date(startTime.getTime() + totalDuration * 60000);
+      const bookingEnd = new Date(
+        bookingStart.getTime() + totalDuration * 60000
+      );
 
-      return startTime < next && endTime > start;
+      return bookingStart < next && bookingEnd > start;
     });
 
     result.push({ label, booked: isBooked });
@@ -205,45 +255,50 @@ function generateHourlySlotsWithOverlap(startDate, endDate, bookings, slotId) {
 }
 
 function goToBookingForm() {
-  router.push('/user/bookingForm');
+  router.push("/user/bookingForm");
 }
 
 function formatTime(dateTime) {
   const d = new Date(dateTime);
-  return d.toLocaleTimeString('th-TH', {
-    hour: '2-digit', minute: '2-digit', hour12: false
+  return d.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   });
 }
 
 function formatDateDisplay(dateStr) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('th-TH', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  return d.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 
 function getLocalDateString(date) {
   const y = date.getFullYear();
-  const m = `${date.getMonth() + 1}`.padStart(2, '0');
-  const d = `${date.getDate()}`.padStart(2, '0');
+  const m = `${date.getMonth() + 1}`.padStart(2, "0");
+  const d = `${date.getDate()}`.padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
 async function fetchSlots() {
-  const res = await fetch('http://localhost:3000/slots');
+  const res = await fetch("http://localhost:3000/slots");
   const data = await res.json();
-  slots.value = data.map(slot => ({
+  slots.value = data.map((slot) => ({
     ...slot,
     date: getLocalDateString(new Date(slot.date)),
     startTime: new Date(`${slot.date}T${slot.startTime}:00`),
-    endTime: new Date(`${slot.date}T${slot.endTime}:00`)
+    endTime: new Date(`${slot.date}T${slot.endTime}:00`),
   }));
 }
 
 async function fetchAllBookings() {
-  const res = await fetch('http://localhost:3000/bookings');
+  const res = await fetch("http://localhost:3000/bookings");
   const data = await res.json();
-  userBookings.value = data.filter(b => b.user?.email === userEmail.value);
+  confirmedBookings.value = data.filter((b) => b.status === "confirmed");
 }
 
 async function refreshBookings() {
@@ -252,9 +307,9 @@ async function refreshBookings() {
 }
 
 onMounted(async () => {
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  userName.value = userData.name || 'ผู้ใช้';
-  userEmail.value = userData.email || '-';
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  userName.value = userData.name || "ผู้ใช้";
+  userEmail.value = userData.email || "-";
 
   await fetchSlots();
   await fetchAllBookings();
@@ -266,21 +321,24 @@ onMounted(async () => {
   }
 });
 
-watch(() => route.query, async () => {
-  const bookingId = route.query.bookingId;
-  if (bookingId) {
-    const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
-    latestBooking.value = await res.json();
-    await fetchAllBookings(); // Refresh bookings when new booking is added
+watch(
+  () => route.query,
+  async () => {
+    const bookingId = route.query.bookingId;
+    if (bookingId) {
+      const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
+      latestBooking.value = await res.json();
+      await fetchAllBookings(); // Refresh bookings when new booking is added
+    }
   }
-});
+);
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");
 
 .page-container {
-  font-family: 'Kanit', 'Poppins', sans-serif;
+  font-family: "Kanit", sans-serif;
   background-color: #f8fafc;
   color: #1e293b;
   min-height: 100vh;
@@ -296,17 +354,10 @@ watch(() => route.query, async () => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.page-title {
-  font-size: 1.75rem;
-  color: #1e3a8a;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
+/* ======================== */
 .section-title {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #1e3a8a;
   border-bottom: 2px solid #bfdbfe;
   padding-bottom: 0.5rem;
@@ -314,6 +365,14 @@ watch(() => route.query, async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  color: #1e3a8a;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .user-info {
@@ -326,10 +385,6 @@ watch(() => route.query, async () => {
   box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
 }
 
-.user-info p {
-  margin: 0.25rem 0;
-}
-
 .action-bar {
   text-align: right;
   margin-bottom: 1.5rem;
@@ -337,7 +392,7 @@ watch(() => route.query, async () => {
 
 .booking-button,
 .refresh-button {
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
   font-weight: 600;
   border: none;
   border-radius: 9999px;
@@ -366,72 +421,7 @@ watch(() => route.query, async () => {
   background: #475569;
 }
 
-.slot-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.95rem;
-  background: #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.slot-table th,
-.slot-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  text-align: center;
-  color: #334155;
-}
-
-.slot-table th {
-  background: #f1f5f9;
-  color: #1e3a8a;
-  font-weight: 600;
-}
-
-.table-row:hover {
-  background: #f9fafb;
-}
-
-.sub-slot {
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  color: #334155;
-  border-top: 1px solid #e2e8f0;
-}
-
-.service-list {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  text-align: left;
-}
-
-.service-list li {
-  padding: 0.25rem 0;
-}
-
-.status-confirmed,
-.status-available {
-  background: #ecfdf5;
-  color: #0f766e;
-  padding: 0.4rem 0.75rem;
-  font-weight: 600;
-  border-radius: 9999px;
-  display: inline-block;
-}
-
-.status-pending,
-.status-booked {
-  background: #fefce8;
-  color: #b45309;
-  padding: 0.4rem 0.75rem;
-  font-weight: 600;
-  border-radius: 9999px;
-  display: inline-block;
-}
+/* ======================== */
 
 .date-picker-wrapper {
   display: flex;
@@ -481,4 +471,133 @@ watch(() => route.query, async () => {
   color: #94a3b8;
   padding: 1rem;
 }
+
+/* ======================== ตารางหลัก */
+
+.slot-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.slot-table th,
+.slot-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: center;
+  color: #334155;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.slot-table th {
+  background: #f1f5f9;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+/* ปรับให้รายการบริการชิดซ้าย */
+.slot-table td:nth-child(5) {
+  text-align: left;
+  vertical-align: top;
+}
+
+/* ======================== บริการในตาราง */
+
+.service-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.service-list li {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* ======================== ป้ายสถานะ */
+
+.status-confirmed,
+.status-pending,
+.status-booked,
+.status-available {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  display: inline-block;
+  min-width: 72px;
+  text-align: center;
+}
+
+.status-confirmed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pending {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.status-booked {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+.status-available {
+  background: #bbf7d0;
+  color: #15803d;
+}
+
+/* ======================== Slot แบบ Expanded */
+
+.expanded-row td {
+  padding: 0;
+  background-color: #f8fafc;
+  padding-top: 12px;
+}
+
+.sub-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.sub-slot-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 380px;
+  padding: 1rem 1.5rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.sub-slot-content:hover {
+  background: #e0f2fe;
+}
+
+.time-label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+/* ======================== */
 </style>
+

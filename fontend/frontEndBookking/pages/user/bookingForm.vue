@@ -1,215 +1,281 @@
 <template>
-       <div class="container">
-         <h1 class="heading">📅 จองคิวบริการ</h1>
+  <div class="container">
+    <h1 class="heading">🗕️ จองคิวบริการ</h1>
 
-         <form @submit.prevent="submitBooking" class="form">
-           <!-- เลือกวันที่ -->
-           <div class="form-group">
-             <label for="date">เลือกวันที่</label>
-             <input type="date" id="date" v-model="date" :min="minDate" required />
-           </div>
+    <form @submit.prevent="submitBooking" class="form">
+      <!-- เลือกวันที่ -->
+      <div class="form-group">
+        <label for="date">เลือกวันที่</label>
+        <input type="date" id="date" v-model="date" :min="minDate" required />
+      </div>
 
-           <!-- เลือก slot + เวลา -->
-           <div class="form-group">
-             <label for="slot">เลือกเวลาที่ต้องการ</label>
-             <select id="slot" v-model="selectedSlot" required>
-               <option value="" disabled>-- กรุณาเลือกเวลา --</option>
-               <option
-                 v-for="slot in availableSlots"
-                 :key="slot.slotId + slot.start"
-                 :value="slot"
-                 :disabled="slot.booked"
-                 :class="{ 'available': !slot.booked, 'booked': slot.booked }"
-               >
-                 Slot {{ slot.slotName }} : เวลา {{ slot.start }} - {{ slot.end }} ({{ slot.booked ? 'จองแล้ว' : 'ว่าง' }})
-               </option>
-             </select>
-             <p v-if="availableSlots.length === 0" class="error-message">ไม่มีเวลาให้เลือกสำหรับวันที่นี้</p>
-           </div>
+      <!-- เลือก slot + เวลา -->
+      <div class="form-group">
+        <label for="slot">เลือกเวลาที่ต้องการ</label>
+        <select id="slot" v-model="selectedSlot" required>
+          <option value="" disabled>-- กรุณาเลือกเวลา --</option>
 
-           <!-- บริการ -->
-           <div class="form-group">
-             <label>เลือกบริการ</label>
-             <div class="services-grid">
-               <label
-                 v-for="service in services"
-                 :key="service.id"
-                 class="service-card"
-                 :class="{ selected: selectedServices.includes(service.id) }"
-               >
-                 <input
-                   type="checkbox"
-                   :value="service.id"
-                   v-model="selectedServices"
-                   class="service-checkbox"
-                 />
-                 <div class="service-content">
-                   <h3>{{ service.sName }}</h3>
-                   <p>{{ service.description }}</p>
-                   <p class="price-duration">
-                     <span>💰 {{ service.price }} บาท</span>
-                     <span>⏰ {{ service.durationMinutes }} นาที</span>
-                   </p>
-                 </div>
-               </label>
-             </div>
-             <p v-if="services.length === 0" class="no-service">ไม่มีบริการให้เลือก</p>
-           </div>
+          <optgroup
+            v-for="(group, index) in groupedSlots"
+            :key="index"
+            :label="'ช่องบริการ ' + group.slotName"
+          >
+            <option
+              v-for="slot in group.slots"
+              :key="slot.slotId + slot.start"
+              :value="slot"
+              :disabled="slot.booked"
+              :class="slot.booked ? 'booked' : 'available'"
+              :title="slot.booked ? '❌ ไม่ว่าง (จองแล้ว)' : '✅ ว่าง'"
+            >
+              ⏰ {{ slot.start }} - {{ slot.end }} ({{ slot.booked ? 'จองแล้ว' : 'ว่าง' }})
+            </option>
+          </optgroup>
+        </select>
 
-           <!-- รวมและราคา -->
-           <div class="summary" v-if="selectedServices.length > 0">
-             <p>⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที</p>
-             <p>💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท</p>
-           </div>
+        <p v-if="selectedSlot" class="status-text">
+          สถานะ:
+          <span :class="selectedSlot.booked ? 'text-red' : 'text-green'">
+            {{ selectedSlot.booked ? '❌ จองแล้ว' : '✅ ว่าง' }}
+          </span>
+        </p>
 
-           <button class="btn-submit" :disabled="!canSubmit" type="submit">ยืนยันการจอง</button>
-         </form>
-       </div>
-     </template>
+        <p v-if="availableSlots.length === 0" class="error-message">
+          ไม่มีเวลาให้เลือกสำหรับวันที่นี้
+        </p>
+      </div>
 
-     <script setup lang="ts">
-     import { ref, computed, onMounted, watch } from "vue";
-     import { useRouter } from "vue-router";
+      <!-- บริการ -->
+      <div class="form-group">
+        <label>เลือกบริการ</label>
+        <div class="services-grid">
+          <label
+            v-for="service in services"
+            :key="service.id"
+            class="service-card"
+            :class="{ selected: selectedServices.includes(service.id) }"
+          >
+            <input
+              type="checkbox"
+              :value="service.id"
+              v-model="selectedServices"
+              class="service-checkbox"
+            />
+            <div class="service-content">
+              <h3>{{ service.sName }}</h3>
+              <p>{{ service.description }}</p>
+              <p class="price-duration">
+                <span>💰 {{ service.price }} บาท</span>
+                <span>⏰ {{ service.durationMinutes }} นาที</span>
+              </p>
+            </div>
+          </label>
+        </div>
+        <p v-if="services.length === 0" class="no-service">ไม่มีบริการให้เลือก</p>
+      </div>
 
-     definePageMeta({ layout: "user" });
+      <!-- รวมและราคา -->
+      <div class="summary" v-if="selectedServices.length > 0">
+        <p>⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที</p>
+        <p>💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท</p>
+      </div>
 
-     const router = useRouter();
-     const date = ref("");
-     const selectedSlot = ref(null);
-     const selectedServices = ref<number[]>([]);
-     const services = ref([]);
-     const slots = ref([]);
-     const userBookings = ref([]);
-     const minDate = new Date().toISOString().slice(0, 10);
+      <button class="btn-submit" :disabled="!canSubmit" type="submit">ยืนยันการจอง</button>
+    </form>
+  </div>
+</template>
 
-     const timeToMinutes = (t: string) =>
-       t.split(":").map(Number).reduce((h, m) => h * 60 + m);
-     const minutesToTime = (m: number) =>
-       `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
 
-     const generateHourlySlots = (start: string, end: string) => {
-       const out = [], s = timeToMinutes(start), e = timeToMinutes(end);
-       for (let i = s; i < e; i += 60)
-         out.push({
-           start: minutesToTime(i),
-           end: minutesToTime(Math.min(i + 60, e)),
-         });
-       return out;
-     };
+definePageMeta({ layout: "user" });
 
-     const availableSlots = computed(() => {
-       if (!date.value) return [];
-       return slots.value
-         .filter((s) => s.date === date.value)
-         .flatMap((slot) => {
-           const hourlySlots = generateHourlySlots(slot.startTime, slot.endTime).map((s) => ({
-             ...s,
-             slotId: slot.id,
-             slotName: slot.slotName,
-           }));
-           return hourlySlots.map((hourlySlot) => {
-             const startTime = new Date(`${date.value}T${hourlySlot.start}:00`);
-             const endTime = new Date(`${date.value}T${hourlySlot.end}:00`);
-             const isBooked = userBookings.value.some((booking) => {
-               if (booking.status !== "confirmed" || !booking.bookingSlots?.some((bs) => bs.slotId === slot.id)) {
-                 return false;
-               }
-               const bookingStart = new Date(
-                 Math.min(...booking.bookingSlots.map((bs) => new Date(bs.startTime).getTime()))
-               );
-               const totalDuration = booking.bookingServices?.reduce(
-                 (sum, bs) => sum + (bs.service?.durationMinutes || 0),
-                 0
-               ) || 0;
-               const bookingEnd = new Date(bookingStart.getTime() + totalDuration * 60000);
-               return bookingStart < endTime && bookingEnd > startTime;
-             });
-             return { ...hourlySlot, booked: isBooked };
-           });
-         });
-     });
+const router = useRouter();
+const date = ref("");
+const selectedSlot = ref(null);
+const selectedServices = ref<number[]>([]);
+const services = ref([]);
+const slots = ref([]);
+const confirmedBookings = ref([]);
 
-     const totalDuration = computed(() =>
-       selectedServices.value.reduce((sum, id) => {
-         const svc = services.value.find((s) => s.id === id);
-         return svc ? sum + svc.durationMinutes : sum;
-       }, 0)
-     );
+const minDate = new Date().toISOString().slice(0, 10);
 
-     const totalPrice = computed(() =>
-       selectedServices.value.reduce((sum, id) => {
-         const svc = services.value.find((s) => s.id === id);
-         return svc ? sum + svc.price : sum;
-       }, 0)
-     );
+const isSlotSelected = (slot: any) => {
+  if (!selectedSlot.value) return false;
+  return (
+    slot.slotId === selectedSlot.value.slotId &&
+    slot.start === selectedSlot.value.start &&
+    slot.end === selectedSlot.value.end
+  );
+};
 
-     const canSubmit = computed(
-       () => date.value && selectedSlot.value && selectedServices.value.length > 0 && !selectedSlot.value.booked
-     );
+const groupedSlots = computed(() => {
+  const groups: Record<string, any[]> = {};
+  for (const slot of availableSlots.value) {
+    if (!groups[slot.slotName]) {
+      groups[slot.slotName] = [];
+    }
+    groups[slot.slotName].push(slot);
+  }
+  return Object.entries(groups).map(([slotName, slots]) => ({
+    slotName,
+    slots,
+  }));
+});
 
-     const fetchSlots = async () => {
-       const res = await fetch("http://localhost:3000/slots");
-       if (!res.ok) return alert("โหลด slot ไม่สำเร็จ");
-       slots.value = await res.json();
-     };
+const timeToMinutes = (t: string) =>
+  t
+    .split(":")
+    .map(Number)
+    .reduce((h, m) => h * 60 + m);
+const minutesToTime = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
-     const fetchServices = async () => {
-       const res = await fetch("http://localhost:3000/services");
-       const data = await res.json();
-       services.value = data.data || [];
-     };
+const generateHourlySlots = (start: string, end: string) => {
+  const out = [],
+    s = timeToMinutes(start),
+    e = timeToMinutes(end);
+  for (let i = s; i < e; i += 60)
+    out.push({
+      start: minutesToTime(i),
+      end: minutesToTime(Math.min(i + 60, e)),
+    });
+  return out;
+};
 
-     const fetchUserBookings = async () => {
-       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-       const userEmail = userData.email || "-";
-       const res = await fetch("http://localhost:3000/bookings");
-       const data = await res.json();
-       userBookings.value = data.filter((b) => b.user?.email === userEmail);
-     };
+const availableSlots = computed(() => {
+  if (!date.value) return [];
+  return slots.value
+    .filter((s) => s.date === date.value)
+    .flatMap((slot) => {
+      const hourlySlots = generateHourlySlots(slot.startTime, slot.endTime).map(
+        (s) => ({
+          ...s,
+          slotId: slot.id,
+          slotName: slot.slotName,
+        })
+      );
+      return hourlySlots.map((hourlySlot) => {
+        const startTime = new Date(`${date.value}T${hourlySlot.start}:00`);
+        const endTime = new Date(`${date.value}T${hourlySlot.end}:00`);
+        const isBooked = confirmedBookings.value.some((booking) => {
+          if (
+            booking.status !== "confirmed" ||
+            !booking.bookingSlots?.some((bs) => bs.slotId === slot.id)
+          ) {
+            return false;
+          }
+          const bookingStart = new Date(
+            Math.min(
+              ...booking.bookingSlots.map((bs) =>
+                new Date(bs.startTime).getTime()
+              )
+            )
+          );
+          const totalDuration =
+            booking.bookingServices?.reduce(
+              (sum, bs) => sum + (bs.service?.durationMinutes || 0),
+              0
+            ) || 0;
+          const bookingEnd = new Date(
+            bookingStart.getTime() + totalDuration * 60000
+          );
+          return bookingStart < endTime && bookingEnd > startTime;
+        });
+        return { ...hourlySlot, booked: isBooked };
+      });
+    });
+});
 
-     const submitBooking = async () => {
-       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-       if (!userData?.id) return alert("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบ");
+const totalDuration = computed(() =>
+  selectedServices.value.reduce((sum, id) => {
+    const svc = services.value.find((s) => s.id === id);
+    return svc ? sum + svc.durationMinutes : sum;
+  }, 0)
+);
 
-       const payload = {
-         userId: userData.id,
-         bookingDate: date.value,
-         status: "PENDING",
-         description: "",
-         services: selectedServices.value,
-         slots: [
-           {
-             slotId: selectedSlot.value.slotId,
-             startTime: `${date.value}T${selectedSlot.value.start}:00`,
-             endTime: `${date.value}T${selectedSlot.value.end}:00`,
-           },
-         ],
-       };
+const totalPrice = computed(() =>
+  selectedServices.value.reduce((sum, id) => {
+    const svc = services.value.find((s) => s.id === id);
+    return svc ? sum + svc.price : sum;
+  }, 0)
+);
 
-       const res = await fetch("http://localhost:3000/bookings", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify(payload),
-       });
+const canSubmit = computed(
+  () =>
+    date.value &&
+    selectedSlot.value &&
+    selectedServices.value.length > 0 &&
+    !selectedSlot.value.booked
+);
 
-       const booking = await res.json();
-       if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
+const fetchSlots = async () => {
+  const res = await fetch("http://localhost:3000/slots");
+  if (!res.ok) return alert("โหลด slot ไม่สำเร็จ");
+  slots.value = await res.json();
+};
 
-       router.push({ path: "/user/bookingWelcome", query: { bookingId: booking.id } });
-     };
+const fetchServices = async () => {
+  const res = await fetch("http://localhost:3000/services");
+  const data = await res.json();
+  services.value = data.data || [];
+};
 
-     onMounted(async () => {
-       await fetchSlots();
-       await fetchServices();
-       await fetchUserBookings();
-     });
+const fetchConfirmedBookings = async () => {
+  const res = await fetch("http://localhost:3000/bookings");
+  const data = await res.json();
+  confirmedBookings.value = data.filter((b) => b.status === "confirmed");
+};
 
-     watch(date, () => {
-       selectedSlot.value = null;
-     });
-     </script>
 
-     <style scoped>
+const submitBooking = async () => {
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  if (!userData?.id) return alert("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบ");
+
+  const payload = {
+    userId: userData.id,
+    bookingDate: date.value,
+    status: "PENDING",
+    description: "",
+    services: selectedServices.value,
+    slots: [
+      {
+        slotId: selectedSlot.value.slotId,
+        startTime: `${date.value}T${selectedSlot.value.start}:00`,
+        endTime: `${date.value}T${selectedSlot.value.end}:00`,
+      },
+    ],
+  };
+
+  const res = await fetch("http://localhost:3000/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const booking = await res.json();
+  if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
+
+  router.push({
+    path: "/user/bookingWelcome",
+    query: { bookingId: booking.id },
+  });
+};
+
+onMounted(async () => {
+  await fetchSlots();
+  await fetchServices();
+  await fetchConfirmedBookings();
+});
+
+
+watch(date, () => {
+  selectedSlot.value = null;
+});
+</script>
+
+<style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap");
 
 .container {
@@ -268,15 +334,29 @@ select:focus {
   outline: none;
 }
 
+select option.booked {
+  color: #dc2626;
+  background-color: #fee2e2;
+  font-weight: bold;
+}
+
 select option.available {
   color: #16a34a;
   background-color: #ecfdf5;
 }
 
-select option.booked {
+.status-text {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.text-red {
   color: #dc2626;
-  background-color: #fee2e2;
-  opacity: 0.7;
+}
+
+.text-green {
+  color: #16a34a;
 }
 
 .services-grid {
