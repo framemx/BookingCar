@@ -210,218 +210,192 @@
      </script>
 
      <style scoped>
-     @import url("https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap");
 
-     .container {
-       max-width: 900px;
-       margin: 2.5rem auto;
-       padding: 2.5rem 3rem;
-       background: #f9fcff;
-       border-radius: 15px;
-       box-shadow: 0 10px 25px rgba(0, 123, 255, 0.22);
-       font-family: "Sarabun", sans-serif;
-       color: #102a43;
-       user-select: none;
-     }
+.container {
+  max-width: 960px;
+  margin: 2.5rem auto;
+  padding: 2.5rem 3rem;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  font-family: "Kanit", "Poppins", sans-serif;
+  color: #1e293b;
+}
 
-     .heading {
-       text-align: center;
-       color: #1e40af;
-       font-weight: 700;
-       font-size: 2rem;
-       margin-bottom: 1.8rem;
-       letter-spacing: 1.1px;
-     }
+.heading {
+  text-align: center;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
 
-     .form {
-       display: flex;
-       flex-direction: column;
-       gap: 1.4rem;
-     }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
 
-     .form-group {
-       display: flex;
-       flex-direction: column;
-     }
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
 
-     .form-group label {
-       font-weight: 600;
-       margin-bottom: 6px;
-       color: #334e68;
-       font-size: 1.1rem;
-       user-select: none;
-     }
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #334155;
+  font-size: 1.05rem;
+}
 
-     input[type="date"],
-     select {
-       padding: 0.6rem 1rem;
-       font-size: 1rem;
-       border-radius: 10px;
-       border: 1.8px solid #bfd7ff;
-       background-color: #f0f8ff;
-       color: #102a43;
-       transition: all 0.3s ease;
-       outline-offset: 3px;
-     }
+input[type="date"],
+select {
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 1.5px solid #bfdbfe;
+  background-color: #f8fafc;
+  color: #1e293b;
+  transition: all 0.3s ease;
+}
 
-     input[type="date"]:focus,
-     select:focus {
-       border-color: #3b82f6;
-       background-color: #dbeafe;
-       box-shadow: 0 0 8px #3b82f6aa;
-       outline: none;
-     }
+input[type="date"]:focus,
+select:focus {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  box-shadow: 0 0 6px #2563eb80;
+  outline: none;
+}
 
-     select option.available {
-       color: #10b981;
-       background-color: #ecfdf5;
-     }
+select option.available {
+  color: #16a34a;
+  background-color: #ecfdf5;
+}
 
-     select option.booked {
-       color: #dc2626;
-       background-color: #fee2e2;
-       opacity: 0.6;
-     }
+select option.booked {
+  color: #dc2626;
+  background-color: #fee2e2;
+  opacity: 0.7;
+}
 
-     .services-grid {
-       display: grid;
-       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-       gap: 28px;
-       max-height: none !important;
-       overflow-y: visible !important;
-       user-select: none;
-     }
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
 
-     .service-card {
-       position: relative;
-       background: white;
-       border: 2px solid transparent;
-       border-radius: 16px;
-       box-shadow: 0 6px 14px rgb(37 99 235 / 0.18);
-       padding: 28px 32px 34px;
-       cursor: pointer;
-       display: flex;
-       flex-direction: column;
-       transition: all 0.3s ease;
-       outline-offset: 3px;
-     }
+.service-card {
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.1);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
 
-     .service-card:hover {
-       box-shadow: 0 6px 18px rgb(37 99 235 / 0.35);
-       transform: translateY(-4px);
-       border-color: #3b82f6;
-     }
+.service-card:hover {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+  border-color: #2563eb;
+}
 
-     .service-card.selected {
-       border-color: #2563eb;
-       box-shadow: 0 0 15px 3px #3b82f6cc;
-       background: #e0ebff;
-       font-weight: 600;
-     }
+.service-card.selected {
+  border-color: #2563eb;
+  background: #e0f2fe;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+}
 
-     .service-checkbox {
-       position: absolute;
-       top: 14px;
-       right: 14px;
-       width: 22px;
-       height: 22px;
-       cursor: pointer;
-       appearance: none;
-       border: 2.5px solid #3b82f6;
-       border-radius: 6px;
-       transition: background-color 0.3s ease, border-color 0.3s ease;
-       background-color: white;
-     }
+.service-checkbox {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 20px;
+  height: 20px;
+  appearance: none;
+  border: 2px solid #2563eb;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-     .service-checkbox:checked {
-       background-color: #3b82f6;
-       border-color: #2563eb;
-       box-shadow: 0 0 8px #3b82f6cc;
-     }
+.service-checkbox:checked {
+  background-color: #2563eb;
+  border-color: #1e3a8a;
+}
 
-     .service-checkbox:checked::after {
-       content: "✔";
-       display: block;
-       color: white;
-       font-weight: 700;
-       font-size: 1.3rem;
-       line-height: 18px;
-       text-align: center;
-     }
+.service-checkbox:checked::after {
+  content: "\2713";
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  position: relative;
+  left: 3px;
+  top: -1px;
+}
 
-     .service-checkbox:hover {
-       border-color: #1d4ed8;
-     }
+.service-content h3 {
+  margin-bottom: 0.75rem;
+  color: #1e3a8a;
+  font-size: 1.25rem;
+}
 
-     .service-content h3 {
-       margin: 0 0 10px;
-       color: #1e40af;
-       font-size: 1.45rem;
-     }
+.service-content p {
+  margin-bottom: 0.5rem;
+  color: #334155;
+  font-size: 1rem;
+}
 
-     .service-content p {
-       margin: 0 0 10px;
-       font-size: 1.1rem;
-       color: #334e68;
-       user-select: text;
-     }
+.price-duration {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: #2563eb;
+  font-size: 0.95rem;
+}
 
-     .price-duration {
-       font-weight: 700;
-       font-size: 1.1rem;
-       color: #2563eb;
-       display: flex;
-       justify-content: space-between;
-       user-select: none;
-     }
+.no-service,
+.error-message {
+  font-style: italic;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
 
-     .no-service {
-       font-style: italic;
-       color: #94a3b8;
-       padding: 6px 0;
-     }
+.summary {
+  background: #e0f2fe;
+  padding: 1rem;
+  border-radius: 14px;
+  color: #1e3a8a;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: inset 0 0 6px rgba(37, 99, 235, 0.2);
+}
 
-     .error-message {
-       color: #dc2626;
-       font-size: 0.9rem;
-       margin-top: 0.5rem;
-     }
+.btn-submit {
+  background: linear-gradient(to right, #2563eb, #3b82f6);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
 
-     .summary {
-       background: #dbeafe;
-       padding: 14px 20px;
-       border-radius: 14px;
-       color: #1e40af;
-       font-weight: 600;
-       font-size: 1.1rem;
-       display: flex;
-       justify-content: space-between;
-       user-select: none;
-       box-shadow: inset 0 0 8px #3b82f6aa;
-     }
+.btn-submit:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
-     .btn-submit {
-       background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-       color: white;
-       font-weight: 700;
-       font-size: 1.2rem;
-       border: none;
-       border-radius: 14px;
-       padding: 14px;
-       cursor: pointer;
-       user-select: none;
-       transition: all 0.3s ease;
-       box-shadow: 0 8px 20px #3b82f6cc;
-     }
-
-     .btn-submit:disabled {
-       background: #94a3b8;
-       box-shadow: none;
-       cursor: not-allowed;
-     }
-
-     .btn-submit:not(:disabled):hover {
-       background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-       box-shadow: 0 10px 30px #2563ebdd;
-     }
-     </style>
+.btn-submit:hover:not(:disabled) {
+  background: linear-gradient(to right, #1e3a8a, #2563eb);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.5);
+}
+</style>

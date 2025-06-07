@@ -277,109 +277,160 @@ watch(() => route.query, async () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
+
 .page-container {
+  font-family: 'Kanit', 'Poppins', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
   min-height: 100vh;
-  padding: 2.5rem 1rem;
-  font-family: "Sarabun", sans-serif;
-  color: #2c3e50;
+  padding: 48px 16px;
 }
 
 .content-wrapper {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   background: #ffffff;
-  padding: 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(44, 62, 80, 0.1);
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .page-title {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   color: #1e3a8a;
-  margin-bottom: 2.5rem;
   font-weight: 700;
   text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  border-bottom: 2px solid #bfdbfe;
+  padding-bottom: 0.5rem;
+  margin: 2.5rem 0 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
-  letter-spacing: 0.02em;
 }
 
 .user-info {
   background: #eff6ff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
-  color: #34495e;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  color: #334155;
+  margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
-  transition: transform 0.2s;
-}
-
-.user-info:hover {
-  transform: translateY(-2px);
 }
 
 .user-info p {
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 }
 
 .action-bar {
   text-align: right;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.booking-button,
+.refresh-button {
+  font-family: 'Kanit', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
 }
 
 .booking-button {
-  background: #1e3a8a;
+  background: #2563eb;
   color: #ffffff;
-  padding: 0.75rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s;
 }
 
 .refresh-button {
-  background: #4b5563;
+  background: #64748b;
   color: #ffffff;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(75, 85, 99, 0.3);
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s;
-  margin-left: 1rem;
+  margin-left: 0.75rem;
 }
 
 .booking-button:hover {
   background: #1d4ed8;
-  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.4);
-  transform: translateY(-2px);
 }
 
 .refresh-button:hover {
-  background: #374151;
-  box-shadow: 0 6px 16px rgba(55, 65, 81, 0.4);
-  transform: translateY(-2px);
+  background: #475569;
 }
 
-.section-title {
-  font-size: 1.5rem;
-  margin-top: 3rem;
-  margin-bottom: 1.5rem;
+.slot-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.95rem;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.slot-table th,
+.slot-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: center;
+  color: #334155;
+}
+
+.slot-table th {
+  background: #f1f5f9;
   color: #1e3a8a;
   font-weight: 600;
-  border-bottom: 2px solid #bfdbfe;
-  padding-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+}
+
+.table-row:hover {
+  background: #f9fafb;
+}
+
+.sub-slot {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #334155;
+  border-top: 1px solid #e2e8f0;
+}
+
+.service-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.service-list li {
+  padding: 0.25rem 0;
+}
+
+.status-confirmed,
+.status-available {
+  background: #ecfdf5;
+  color: #0f766e;
+  padding: 0.4rem 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.status-pending,
+.status-booked {
+  background: #fefce8;
+  color: #b45309;
+  padding: 0.4rem 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  display: inline-block;
 }
 
 .date-picker-wrapper {
@@ -392,47 +443,30 @@ watch(() => route.query, async () => {
   position: relative;
   display: inline-flex;
   align-items: center;
-  border: 2px solid #1e3a8a;
-  border-radius: 10px;
+  border: 2px solid #2563eb;
+  border-radius: 9999px;
   padding: 0.5rem 1rem 0.5rem 3rem;
-  background: #f9fafb;
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   max-width: 280px;
   width: 100%;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.date-input-label:hover {
-  border-color: #1d4ed8;
-  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.2);
 }
 
 .calendar-icon {
   position: absolute;
   left: 1rem;
   font-size: 1.25rem;
-  color: #1e3a8a;
+  color: #2563eb;
   pointer-events: none;
-  transition: color 0.2s;
 }
 
 .date-input {
   border: none;
   background: transparent;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #1e293b;
   width: 100%;
-  cursor: pointer;
-  padding: 0.25rem 0;
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  position: absolute;
-  right: 0.75rem;
-  width: 24px;
-  height: 24px;
   cursor: pointer;
 }
 
@@ -440,98 +474,11 @@ watch(() => route.query, async () => {
   outline: none;
 }
 
-.date-input:hover + .calendar-icon,
-.date-input:focus + .calendar-icon {
-  color: #1d4ed8;
-}
-
-.slot-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 1rem;
-  margin-top: 1rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.slot-table th,
-.slot-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
-  text-align: center;
-  vertical-align: middle;
-  color: #34495e;
-}
-
-.slot-table th {
-  background: #eff6ff;
-  color: #1e3a8a;
-  font-weight: 600;
-  border-bottom: 2px solid #bfdbfe;
-}
-
-.table-row {
-  transition: background-color 0.2s;
-}
-
-.slot-row {
-  cursor: pointer;
-}
-
-.table-row:hover {
-  background: #f9fafb;
-}
-
-.expanded-row {
-  background: #f9fafb;
-}
-
-.sub-slot {
-  padding: 0.5rem 1rem;
-  font-size: 0.95rem;
-  color: #34495e;
-  border-top: 1px solid #e5e7eb;
-}
-
-.service-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-}
-
-.service-list li {
-  padding: 0.25rem 0;
-  font-size: 0.95rem;
-}
-
-.status-confirmed,
-.status-available {
-  color: #10b981;
-  font-weight: 600;
-  background: #ecfdf5;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  display: inline-block;
-}
-
-.status-pending,
-.status-booked {
-  color: #f59e0b;
-  font-weight: 600;
-  background: #fefce8;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  display: inline-block;
-}
-
 .no-bookings {
   text-align: center;
-  padding: 1.5rem;
-  color: #7f8c8d;
   font-style: italic;
   font-weight: 500;
+  color: #94a3b8;
+  padding: 1rem;
 }
 </style>

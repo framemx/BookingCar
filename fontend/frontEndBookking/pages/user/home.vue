@@ -1,111 +1,270 @@
-    <template>
-    <div class="user-layout min-h-screen flex flex-col bg-gray-50">
-        <main class="flex-grow pt-20 p-8 max-w-7xl mx-auto w-full">
-        <!-- Hero Section with Background Image -->
-        <section
-            class="relative w-full h-[600px] bg-cover bg-center bg-no-repeat mb-10 rounded-lg shadow"
-        
-        >
-            <div
-            class="absolute inset-0 bg-white bg-opacity-50 z-0 rounded-lg " style="background-image: url('https://th.bing.com/th/id/OIP.XjRjwf4Pyg1UKSaEbXqifAHaEK?rs=1&pid=ImgDetMain')"
-            ></div>
-            <div
-            class="relative z-10 h-full flex flex-col justify-center items-center text-center px-4"
-            >
-            <h1 class="text-4xl font-extrabold text-white mb-4">
-                🚗 ค้นหาบริการดูแลรถที่ดีที่สุด
-            </h1>
-            <p class="text-lg text-gray-200 mb-8">
-                จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว
-            </p>
-            <NuxtLink
-                to="/user/bookingForm"
-                class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full transition"
-            >
-                เริ่มจองคิวตอนนี้
-            </NuxtLink>
+<template>
+  <div class="user-layout">
+    <main class="main-wrapper">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+          <h1 class="hero-title">🚗 ค้นหาบริการดูแลรถที่ดีที่สุด</h1>
+          <p class="hero-subtitle">
+            จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว
+          </p>
+          <NuxtLink to="/user/bookingForm" class="hero-button">
+            เริ่มจองคิวตอนนี้
+          </NuxtLink>
+        </div>
+      </section>
+
+      <!-- Service Types -->
+      <section class="section">
+        <h2 class="section-title">ประเภทบริการ</h2>
+        <div class="service-grid">
+          <div v-for="type in serviceTypes" :key="type.name" class="service-card">
+            <img :src="type.icon" alt="" class="service-icon" />
+            <p class="service-name">{{ type.name }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Why Choose Us -->
+      <section class="why-section">
+        <h2 class="section-title">ทำไมต้องจองกับเรา?</h2>
+        <div class="why-grid">
+          <div v-for="reason in reasons" :key="reason.title" class="why-card">
+            <div class="why-icon">
+              <UIcon :name="reason.icon" class="icon" />
             </div>
-        </section>
+            <h3 class="why-title">{{ reason.title }}</h3>
+            <p class="why-text">{{ reason.text }}</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</template>
 
-        <!-- Service Types -->
-        <section class="mb-16">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">ประเภทบริการ</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div
-                v-for="type in serviceTypes"
-                :key="type.name"
-                class="p-4 bg-white shadow rounded-lg text-center hover:bg-blue-50 transition"
-            >
-                <img :src="type.icon" alt="" class="w-10 h-10 mx-auto mb-2" />
-                <p class="text-gray-700 font-medium">{{ type.name }}</p>
-            </div>
-            </div>
-        </section>
+<script setup lang="ts">
+definePageMeta({ layout: "user" });
 
-        <!-- Why Choose Us -->
-        <section class="bg-gray-100 py-16 px-6 rounded-lg shadow-sm">
-            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">
-            ทำไมต้องจองกับเรา?
-            </h2>
-            <div
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center"
-            >
-            <div
-                v-for="reason in reasons"
-                :key="reason.title"
-                class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition"
-            >
-                <div class="text-blue-600 text-4xl mb-4">
-                <UIcon :name="reason.icon" class="w-10 h-10 mx-auto" />
-                </div>
-                <h3 class="text-xl font-semibold mb-2">{{ reason.title }}</h3>
-                <p class="text-gray-600 text-sm">{{ reason.text }}</p>
-            </div>
-            </div>
-        </section>
-        </main>
-    </div>
-    </template>
+const serviceTypes = [
+  { name: "ล้างรถ", icon: "/icon/car-wash.png" },
+  { name: "เคลือบสี", icon: "/icon/polish.png" },
+  { name: "ดูดฝุ่น", icon: "/icon/vacuum.png" },
+  { name: "ล้างภายใน", icon: "/icon/interior.png" },
+  { name: "พ่นฆ่าเชื้อ", icon: "/icon/disinfect.png" },
+  { name: "อื่นๆ", icon: "/icon/more.png" },
+];
 
-    <script setup lang="ts">
-    definePageMeta({ layout: "user" });
+const reasons = [
+  {
+    title: "บริการรวดเร็ว",
+    text: "เลือกเวลาที่คุณสะดวกได้ทันที",
+    icon: "i-lucide-clock",
+  },
+  {
+    title: "ช่างมืออาชีพ",
+    text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ",
+    icon: "i-lucide-users",
+  },
+  {
+    title: "ราคาชัดเจน",
+    text: "ไม่มีค่าใช้จ่ายแอบแฝง",
+    icon: "i-lucide-badge-dollar-sign",
+  },
+  {
+    title: "จองง่ายผ่านมือถือ",
+    text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์",
+    icon: "i-lucide-smartphone",
+  },
+];
+</script>
 
-    const serviceTypes = [
-    { name: "ล้างรถ", icon: "/icon/car-wash.png" },
-    { name: "เคลือบสี", icon: "/icon/polish.png" },
-    { name: "ดูดฝุ่น", icon: "/icon/vacuum.png" },
-    { name: "ล้างภายใน", icon: "/icon/interior.png" },
-    { name: "พ่นฆ่าเชื้อ", icon: "/icon/disinfect.png" },
-    { name: "อื่นๆ", icon: "/icon/more.png" },
-    ];
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
 
-    const reasons = [
-    {
-        title: "บริการรวดเร็ว",
-        text: "เลือกเวลาที่คุณสะดวกได้ทันที",
-        icon: "i-lucide-clock",
-    },
-    {
-        title: "ช่างมืออาชีพ",
-        text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ",
-        icon: "i-lucide-users",
-    },
-    {
-        title: "ราคาชัดเจน",
-        text: "ไม่มีค่าใช้จ่ายแอบแฝง",
-        icon: "i-lucide-badge-dollar-sign",
-    },
-    {
-        title: "จองง่ายผ่านมือถือ",
-        text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์",
-        icon: "i-lucide-smartphone",
-    },
-    ];
-    </script>
+.user-layout {
+  font-family: 'Kanit', 'Poppins', sans-serif;
+  color: #1e293b;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
 
-    <style scoped>
-    .user-layout {
-    font-family: "Sarabun", sans-serif;
-    color: #1e293b;
-    }
-    </style>
+.main-wrapper {
+  padding: 48px 24px 32px;
+  max-width: 960px;  /* เดิม 1280px */
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  height: 320px; /* ย่อเล็กนิดเพื่อบาลานซ์ */
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 40px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.hero-background {
+  background-image: url('/images/carwash.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.5);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.hero-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  margin-bottom: 1.2rem;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.hero-button {
+  background-color: #2563eb;
+  color: white;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.3rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.3s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.hero-button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Service Section */
+.section {
+  margin-bottom: 64px;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 24px;
+  color: #1e293b;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.service-card {
+  background: white;
+  border-radius: 16px;
+  text-align: center;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: background 0.3s;
+}
+
+.service-card:hover {
+  background: #eff6ff;
+}
+
+.service-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+}
+
+.service-name {
+  font-weight: 500;
+  color: #334155;
+  margin-top: 4px;
+}
+
+/* Why Choose Us */
+.why-section {
+  background: #f1f5f9;
+  border-radius: 24px;
+  padding: 64px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  text-align: center;
+}
+
+.why-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  min-height: 220px;
+}
+
+
+
+.why-icon .icon {
+  font-size: 2.5rem;
+  color: #2563eb;
+  margin-bottom: 16px;
+}
+
+.why-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  min-height: 3rem; /* 👈 ทำให้ข้อความ title อยู่บรรทัดเดียวหรือสอง แต่สูงเท่ากันทุกการ์ด */
+}
+
+.why-text {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+  min-height: 3rem; /* 👈 ให้ข้อความรองรับได้ 2 บรรทัดสม่ำเสมอ */
+}
+@media (max-width: 1024px) {
+  .why-grid {
+    grid-template-columns: repeat(2, 1fr); /* จอแท็บเล็ต */
+  }
+}
+
+@media (max-width: 640px) {
+  .why-grid {
+    grid-template-columns: 1fr; /* จอมือถือ */
+  }
+}
+</style>
