@@ -1,134 +1,112 @@
 <template>
-  <div class="container">
-    <h2 class="title">📋 รายการจองทั้งหมด</h2>
+  <div class="page-container">
+    <div class="content-wrapper">
+      <h1 class="page-title">📋 รายการจองทั้งหมด</h1>
 
-    <div class="filter-section">
-      <label for="filter-date" class="filter-label">เลือกวันที่:</label>
-      <div class="date-picker-wrapper">
-        <input type="date" id="filter-date" v-model="selectedDate" @change="filterBookings" class="filter-input" />
-        <span class="calendar-icon">📅</span>
+      <div class="date-filter-bar">
+        <label class="date-label" for="filter-date">
+          <span class="calendar-icon">📅</span> เลือกวันที่:
+        </label>
+        <input type="date" id="filter-date" v-model="selectedDate" @change="filterBookings" class="date-input" />
       </div>
-    </div>
 
-    <div class="table-wrapper">
-      <table class="booking-table">
-        <thead>
-          <tr>
-            <th>รหัส</th>
-            <th>ชื่อลูกค้า</th>
-            <th>วันที่จอง</th>
-            <th>ช่องบริการ</th>
-            <th>เริ่ม</th>
-            <th>สิ้นสุด</th>
-            <th>ระยะเวลา</th>
-            <th>ราคา</th>
-            <th>จำนวนบริการ</th>
-            <th>สถานะ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="booking in filteredBookings" :key="booking.id" class="table-row" @click="openDetailModal(booking)">
-            <td>{{ booking.id }}</td>
-            <td>{{ booking.customerName }}</td>
-            <td>{{ new Date(booking.date).toLocaleDateString("th-TH") }}</td>
-            <td class="center">{{ booking.slotName }}</td>
-            <td>{{ booking.startTime }}</td>
-            <td>{{ booking.endTime }}</td>
-            <td class="center">{{ booking.duration }} นาที</td>
-            <td class="center">{{ booking.totalPrice }} ฿</td>
-            <td class="center">{{ booking.serviceCount }}</td>
-            <td>
-              <div class="status-wrapper">
-                <div class="status-badge" :class="statusColor(booking.editingStatus)" @click.stop="toggleDropdown(booking.id)">
-                  {{ displayStatus(booking.editingStatus) }}
+      <div class="table-wrapper">
+        <table class="booking-table">
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>ชื่อลูกค้า</th>
+              <th>วันที่จอง</th>
+              <th>ช่องบริการ</th>
+              <th>เริ่ม</th>
+              <th>สิ้นสุด</th>
+              <th>ระยะเวลา</th>
+              <th>ราคา</th>
+              <th>จำนวนบริการ</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="booking in filteredBookings"
+              :key="booking.id"
+              class="table-row"
+              @click="openDetailModal(booking)"
+            >
+              <td>{{ booking.id }}</td>
+              <td>{{ booking.customerName }}</td>
+              <td>{{ new Date(booking.date).toLocaleDateString('th-TH') }}</td>
+              <td class="center">{{ booking.slotName }}</td>
+              <td>{{ booking.startTime }}</td>
+              <td>{{ booking.endTime }}</td>
+              <td class="center">{{ booking.duration }} นาที</td>
+              <td class="center">{{ booking.totalPrice }} ฿</td>
+              <td class="center">{{ booking.serviceCount }}</td>
+              <td>
+                <div class="status-action-wrapper">
+                  <div
+                    class="status-badge"
+                    :class="statusColor(booking.editingStatus)"
+                    @click.stop="toggleDropdown(booking.id)"
+                  >
+                    {{ displayStatus(booking.editingStatus) }}
+                  </div>
+                  <button class="delete-btn" @click.stop="deleteBooking(booking.id)">🗑️</button>
+                  <ul v-if="openDropdown === booking.id" class="dropdown-menu">
+                    <li @click.stop="selectStatus(booking, 'pending')" class="dropdown-item">🕓 รออนุมัติ</li>
+                    <li @click.stop="selectStatus(booking, 'confirmed')" class="dropdown-item">✅ ยืนยันแล้ว</li>
+                  </ul>
                 </div>
-                <ul v-if="openDropdown === booking.id" class="dropdown-menu">
-                  <li @click.stop="selectStatus(booking, 'pending')" class="dropdown-item">🕓 รออนุมัติ</li>
-                  <li @click.stop="selectStatus(booking, 'confirmed')" class="dropdown-item">✅ ยืนยันแล้ว</li>
-                </ul>
-              </div>
-              <button class="delete-btn" @click.stop="deleteBooking(booking.id)">🗑️</button>
-            </td>
-          </tr>
-          <tr v-if="filteredBookings.length === 0">
-            <td colspan="10" class="no-data">ไม่มีรายการจองในวันที่เลือก</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Popup for Success Notification -->
-    <div v-if="showPopup" class="popup-overlay">
-      <div class="popup-content">
-        <span class="popup-icon">✅</span>
-        <p class="popup-message">อัปเดตสถานะสำเร็จแล้ว</p>
-        <button class="popup-close-btn" @click="showPopup = false">ปิด</button>
+              </td>
+            </tr>
+            <tr v-if="filteredBookings.length === 0">
+              <td colspan="10" class="no-bookings">ไม่มีรายการจองในวันที่เลือก</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
 
-    <!-- Modal for Booking Details -->
-    <teleport to="body">
-      <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
-        <div class="modal-content">
-          <h3 class="modal-title">📋 รายละเอียดการจอง</h3>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">รหัส:</span>
-              <span class="detail-value">{{ selectedBooking?.id }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">ชื่อลูกค้า:</span>
-              <span class="detail-value">{{ selectedBooking?.customerName }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">วันที่จอง:</span>
-              <span class="detail-value">{{ selectedBooking?.date ? new Date(selectedBooking.date).toLocaleDateString("th-TH") : '-' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">ช่องบริการ:</span>
-              <span class="detail-value">{{ selectedBooking?.slotName }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">เวลาเริ่ม:</span>
-              <span class="detail-value">{{ selectedBooking?.startTime }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">เวลาสิ้นสุด:</span>
-              <span class="detail-value">{{ selectedBooking?.endTime }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">ระยะเวลา:</span>
-              <span class="detail-value">{{ selectedBooking?.duration }} นาที</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">ราคารวม:</span>
-              <span class="detail-value">{{ selectedBooking?.totalPrice }} ฿</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">จำนวนบริการ:</span>
-              <span class="detail-value">{{ selectedBooking?.serviceCount }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">สถานะ:</span>
-              <span class="detail-value">{{ displayStatus(selectedBooking?.editingStatus) }}</span>
-            </div>
-          </div>
-          <div class="services-section">
-            <h4 class="services-title">รายการบริการ:</h4>
-            <ul class="services-list">
-              <li v-for="service in selectedBooking?.services" :key="service.id" class="service-item">
-                <span class="service-name">{{ service.sName }}</span>
-                <span class="service-details">
-                  ({{ service.durationMinutes }} นาที, {{ service.price }} ฿)
-                </span>
-              </li>
-              <li v-if="!selectedBooking?.services?.length" class="no-services">ไม่มีบริการ</li>
-            </ul>
-          </div>
-          <button class="modal-close-btn" @click="closeDetailModal">ปิด</button>
+      <div v-if="showPopup" class="popup-overlay">
+        <div class="popup-content">
+          <span class="popup-icon">✅</span>
+          <p class="popup-message">อัปเดตสถานะสำเร็จแล้ว</p>
+          <button class="popup-close-btn" @click="showPopup = false">ปิด</button>
         </div>
       </div>
-    </teleport>
+
+      <teleport to="body">
+        <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+          <div class="modal-content">
+            <h3 class="modal-title">📋 รายละเอียดการจอง</h3>
+            <div class="detail-grid">
+              <div class="detail-item" v-for="(value, label) in bookingDetailMap" :key="label">
+                <span class="detail-line">
+                  <span class="detail-label">📌 {{ label }}:</span>
+                  <span class="detail-value">{{ value }}</span>
+                </span>
+              </div>
+            </div>
+            <div class="services-section">
+              <h4 class="services-title">🛠️ รายการบริการ:</h4>
+              <ul class="services-list">
+                <li
+                  v-for="service in selectedBooking?.services"
+                  :key="service.id"
+                  class="service-item"
+                >
+                  <span class="service-name">🔧 {{ service.sName }}</span>
+                  <span class="service-details">({{ service.durationMinutes }} นาที, {{ service.price }} ฿)</span>
+                </li>
+                <li v-if="!selectedBooking?.services?.length" class="no-services">ไม่มีบริการ</li>
+              </ul>
+            </div>
+            <div class="modal-footer">
+              <button class="modal-close-btn" @click="closeDetailModal">ปิด</button>
+            </div>
+          </div>
+        </div>
+      </teleport>
+    </div>
   </div>
 </template>
 
@@ -166,6 +144,22 @@ const showPopup = ref<boolean>(false);
 const showDetailModal = ref<boolean>(false);
 const selectedBooking = ref<Booking | null>(null);
 
+const bookingDetailMap = computed(() => {
+  if (!selectedBooking.value) return {};
+  return {
+    "รหัส": selectedBooking.value.id,
+    "ชื่อลูกค้า": selectedBooking.value.customerName,
+    "วันที่จอง": new Date(selectedBooking.value.date).toLocaleDateString("th-TH"),
+    "ช่องบริการ": selectedBooking.value.slotName,
+    "เวลาเริ่ม": selectedBooking.value.startTime,
+    "เวลาสิ้นสุด": selectedBooking.value.endTime,
+    "ระยะเวลา": `${selectedBooking.value.duration} นาที`,
+    "ราคารวม": `${selectedBooking.value.totalPrice} ฿`,
+    "จำนวนบริการ": selectedBooking.value.serviceCount,
+    "สถานะ": displayStatus(selectedBooking.value.editingStatus)
+  };
+});
+
 function toggleDropdown(id: number) {
   openDropdown.value = openDropdown.value === id ? null : id;
 }
@@ -175,7 +169,7 @@ function displayStatus(status: string) {
 }
 
 function statusColor(status: string) {
-  return status === "pending" ? "bg-yellow" : status === "confirmed" ? "bg-green" : "bg-gray";
+  return status === "pending" ? "status-pending" : status === "confirmed" ? "status-confirmed" : "status-pending";
 }
 
 async function deleteBooking(id: number) {
@@ -197,7 +191,7 @@ async function updateBookingStatus(id: number, status: string) {
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status })
   });
   if (res.ok) {
     showPopup.value = true;
@@ -238,7 +232,7 @@ function mapBooking(raw: any): Booking {
     slotName: slots[0]?.slot?.slotName || "-",
     status: raw.status,
     editingStatus: raw.status ?? "",
-    services: services.map((bs: any) => bs.service || {}),
+    services: services.map((bs: any) => bs.service || {})
   };
 }
 
@@ -248,9 +242,7 @@ async function fetchBookings() {
   bookings.value = data.map(mapBooking);
 }
 
-function filterBookings() {
-  // triggered on input change, used only for reactivity
-}
+function filterBookings() {}
 
 const filteredBookings = computed(() => {
   if (!selectedDate.value) return bookings.value;
@@ -261,92 +253,76 @@ onMounted(fetchBookings);
 </script>
 
 <style scoped>
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  font-family: "Sarabun", sans-serif;
-  position: relative;
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");
+
+.page-container {
+  font-family: 'Kanit', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  padding: 48px 16px;
 }
 
-.title {
-  font-size: 2.25rem;
+.content-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.page-title {
+  font-size: 1.8rem;
   color: #1e3a8a;
   font-weight: 700;
   text-align: center;
   margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
 }
 
-.filter-section {
+.date-filter-bar {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.6rem;
 }
 
-.filter-label {
-  font-size: 1rem;
+.date-label {
+  font-weight: 600;
   color: #1e3a8a;
-  font-weight: 500;
-}
-
-.date-picker-wrapper {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
-.filter-input {
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-size: 1rem;
-  background: #f9fafb;
-  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
-  width: 200px;
+.date-input {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: 1.5px solid #2563eb;
+  background-color: #fff;
+  color: #1e293b;
+  width: 180px;
+  box-shadow: 0 0 0px 1px #bfdbfe;
+  transition: 0.2s ease;
 }
 
-.filter-input:focus {
-  outline: none;
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-  background: #ffffff;
-}
-
-.filter-input::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  position: absolute;
-  right: 0.75rem;
-  width: 24px;
-  height: 24px;
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%) hue-rotate(209deg) brightness(90%) contrast(100%);
   cursor: pointer;
-}
-
-.calendar-icon {
-  position: absolute;
-  right: 0.75rem;
-  font-size: 1.25rem;
+  height: 14px;
+  width: 14px;
   color: #1e3a8a;
-  pointer-events: none;
-  transition: color 0.2s;
-}
-
-.filter-input:hover + .calendar-icon,
-.filter-input:focus + .calendar-icon {
-  color: #1d4ed8;
 }
 
 .table-wrapper {
-  border-radius: 12px;
+  overflow-x: auto;
   background: #ffffff;
+  border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -354,178 +330,94 @@ onMounted(fetchBookings);
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .booking-table th {
-  background: #eff6ff;
+  background: #f1f5f9;
   color: #1e3a8a;
-  padding: 1rem;
+  padding: 0.75rem;
   font-weight: 600;
   text-align: center;
-  border-bottom: 2px solid #bfdbfe;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .booking-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.table-row {
-  transition: background-color 0.2s;
-  cursor: pointer;
-}
-
-.table-row:hover {
-  background-color: #e0e7ff;
-}
-
-.booking-table td.center {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
   text-align: center;
+  color: #334155;
+  font-weight: 500;
 }
 
-.no-data {
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-  font-style: italic;
+.status-confirmed {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-.status-wrapper {
-  position: relative;
-  display: inline-block;
+.status-pending {
+  background: #fef9c3;
+  color: #92400e;
 }
 
 .status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  color: white;
+  font-size: 0.85rem;
   font-weight: 500;
-  font-size: 0.875rem;
-  cursor: pointer;
-  min-width: 100px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  display: inline-block;
+  min-width: 64px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.status-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.no-bookings {
+  text-align: center;
+  font-style: italic;
+  font-weight: 500;
+  color: #94a3b8;
+  padding: 1rem;
 }
 
-.bg-yellow {
-  background-color: #facc15;
-  color: #1f2937;
+.modal-close-btn,
+.popup-close-btn {
+  background: #1e3a8a;
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.bg-green {
-  background-color: #10b981;
+.status-action-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
 }
-
-.bg-gray {
-  background-color: #9ca3af;
-}
-
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  right: 0;
-  background: #ffffff;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  overflow: hidden;
-  z-index: 1000;
-  margin-top: 0.5rem;
-  min-width: 160px;
-  list-style: none;
+  left: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
   padding: 0.5rem 0;
+  z-index: 10;
+  min-width: 120px;
 }
-
 .dropdown-item {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  color: #1e3a8a;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .dropdown-item:hover {
-  background-color: #eff6ff;
-  color: #1e3a8a;
+  background-color: #f1f5f9;
 }
-
-.delete-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.25rem;
-  color: #ef4444;
-  transition: color 0.2s, transform 0.2s;
-  margin-left: 0.5rem;
-}
-
-.delete-btn:hover {
-  color: #b91c1c;
-  transform: scale(1.1);
-}
-
-/* Popup Styles */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.popup-content {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  max-width: 350px;
-  width: 100%;
-  animation: popupFadeIn 0.3s ease-in-out;
-}
-
-.popup-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.popup-message {
-  font-size: 1.1rem;
-  color: #1e3a8a;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-}
-
-.popup-close-btn {
-  background: #1e3a8a;
-  color: #ffffff;
-  padding: 0.5rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.popup-close-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-/* Modal for Booking Details */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -534,39 +426,53 @@ onMounted(fetchBookings);
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
   background: #ffffff;
-  padding: 2rem 3rem;
-  border-radius: 16px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
+  padding: 2.5rem 3rem;
+  border-radius: 1.75rem;
+  max-width: 650px;
+  width: 100%;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-  animation: popupFadeIn 0.3s ease-in-out;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.3s ease;
+  color: #1e293b;
+  font-family: 'Kanit', sans-serif;
 }
 
 .modal-title {
   font-size: 1.75rem;
-  color: #1e3a8a;
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  color: #1e3a8a;
   text-align: center;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
+
+.detail-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+} 
 
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem 2rem;
   margin-bottom: 2rem;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
+  gap: 0.2rem;
+  margin-bottom: 1.25rem;
 }
 
 .detail-label {
@@ -577,7 +483,8 @@ onMounted(fetchBookings);
 
 .detail-value {
   color: #334155;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  padding-left: 0.25rem;
 }
 
 .services-section {
@@ -586,65 +493,47 @@ onMounted(fetchBookings);
 
 .services-title {
   font-size: 1.25rem;
-  color: #1e3a8a;
   font-weight: 600;
   margin-bottom: 1rem;
+  color: #1e3a8a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .services-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .service-item {
-  padding: 0.75rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+  font-size: 0.95rem;
+  color: #334155;
+  transition: background 0.2s;
 }
 
-.service-name {
-  font-weight: 500;
-  color: #1e293b;
+.service-item:hover {
+  background: #e0f2fe;
 }
 
-.service-details {
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.no-services {
-  color: #6b7280;
-  font-style: italic;
-  padding: 0.75rem;
+.modal-footer {
   text-align: center;
+  margin-top: 2rem;
 }
 
-.modal-close-btn {
-  background: #1e3a8a;
-  color: #ffffff;
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.modal-close-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-@keyframes popupFadeIn {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;

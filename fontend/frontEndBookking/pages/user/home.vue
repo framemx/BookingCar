@@ -1,23 +1,18 @@
 <template>
   <div class="user-layout">
-    <main class="main-wrapper">
+    <main class="container content-wrapper">
       <!-- Hero Section -->
       <section class="hero-section">
-        <div class="hero-background"></div>
         <div class="hero-content">
           <h1 class="hero-title">🚗 ค้นหาบริการดูแลรถที่ดีที่สุด</h1>
-          <p class="hero-subtitle">
-            จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว
-          </p>
-          <NuxtLink to="/user/bookingForm" class="hero-button">
-            เริ่มจองคิวตอนนี้
-          </NuxtLink>
+          <p class="hero-subtitle">จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว</p>
+          <NuxtLink to="/user/bookingForm" class="hero-button">เริ่มจองคิวตอนนี้</NuxtLink>
         </div>
       </section>
 
       <!-- Service Types -->
       <section class="section">
-        <h2 class="section-title">ประเภทบริการ</h2>
+        <h2 class="section-title text-center">ประเภทบริการ</h2>
         <div class="service-grid">
           <div v-for="type in serviceTypes" :key="type.name" class="service-card">
             <img :src="type.icon" alt="" class="service-icon" />
@@ -26,9 +21,19 @@
         </div>
       </section>
 
+      <!-- Gallery -->
+      <section class="section">
+        <h2 class="section-title text-center">ตัวอย่างบริการ</h2>
+        <div class="gallery-custom">
+          <div v-for="img in galleryImages" :key="img.src" class="gallery-item">
+            <img :src="img.src" :alt="img.alt" />
+          </div>
+        </div>
+      </section>
+
       <!-- Why Choose Us -->
-      <section class="why-section">
-        <h2 class="section-title">ทำไมต้องจองกับเรา?</h2>
+      <section class="section">
+        <h2 class="section-title text-center">ทำไมต้องจองกับเรา?</h2>
         <div class="why-grid">
           <div v-for="reason in reasons" :key="reason.title" class="why-card">
             <div class="why-icon">
@@ -48,223 +53,191 @@ definePageMeta({ layout: "user" });
 
 const serviceTypes = [
   { name: "ล้างรถ", icon: "/icon/car-wash.png" },
-  { name: "เคลือบสี", icon: "/icon/polish.png" },
+  { name: "ขัดสี", icon: "/icon/car.png" },
   { name: "ดูดฝุ่น", icon: "/icon/vacuum.png" },
-  { name: "ล้างภายใน", icon: "/icon/interior.png" },
-  { name: "พ่นฆ่าเชื้อ", icon: "/icon/disinfect.png" },
-  { name: "อื่นๆ", icon: "/icon/more.png" },
+  { name: "ซักเบาะ", icon: "/icon/car-seat.png" },
+  { name: "พ่นฆ่าเชื้อ", icon: "/icon/disinfection.png" },
+  { name: "อื่นๆ", icon: "/icon/power-wash.png" },
+];
+
+const galleryImages = [
+  { src: "/images/service1.jpg", alt: "ล้างรถ" },
+  { src: "/images/service2.jpg", alt: "ขัดสี" },
+  { src: "/images/service3.jpg", alt: "ดูดฝุ่น" },
+  { src: "/images/service4.jpg", alt: "ซักเบาะ" },
+  { src: "/images/service5.jpg", alt: "พ่นฆ่าเชื้อ" },
+  { src: "/images/service6.jpg", alt: "เปลี่ยนน้ำมันเครื่อง" },
 ];
 
 const reasons = [
-  {
-    title: "บริการรวดเร็ว",
-    text: "เลือกเวลาที่คุณสะดวกได้ทันที",
-    icon: "i-lucide-clock",
-  },
-  {
-    title: "ช่างมืออาชีพ",
-    text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ",
-    icon: "i-lucide-users",
-  },
-  {
-    title: "ราคาชัดเจน",
-    text: "ไม่มีค่าใช้จ่ายแอบแฝง",
-    icon: "i-lucide-badge-dollar-sign",
-  },
-  {
-    title: "จองง่ายผ่านมือถือ",
-    text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์",
-    icon: "i-lucide-smartphone",
-  },
+  { title: "บริการรวดเร็ว", text: "เลือกเวลาที่คุณสะดวกได้ทันที", icon: "i-lucide-clock" },
+  { title: "ช่างมืออาชีพ", text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ", icon: "i-lucide-users" },
+  { title: "ราคาชัดเจน", text: "ไม่มีค่าใช้จ่ายแอบแฝง", icon: "i-lucide-badge-dollar-sign" },
+  { title: "จองง่ายผ่านมือถือ", text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์", icon: "i-lucide-smartphone" },
 ];
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap");
 
 .user-layout {
-  font-family: 'Kanit', 'Poppins', sans-serif;
+  font-family: "Kanit", sans-serif;
+  background: #f8fafc;
   color: #1e293b;
-  background-color: #f8fafc;
   min-height: 100vh;
+  padding-top: 48px;
 }
 
-.main-wrapper {
-  padding: 48px 24px 32px;
-  max-width: 960px;  /* เดิม 1280px */
+.container.content-wrapper {
+  max-width: 960px;
   margin: 0 auto;
-}
-
-/* Hero Section */
-.hero-section {
-  position: relative;
-  height: 320px; /* ย่อเล็กนิดเพื่อบาลานซ์ */
+  background: #ffffff;
+  padding: 32px;
   border-radius: 24px;
-  overflow: hidden;
-  margin-bottom: 40px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.hero-background {
-  background-image: url('/images/carwash.jpg');
-  background-size: cover;
-  background-position: center;
-  filter: brightness(0.5);
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 0 24px;
-}
-
-.hero-title {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
-}
-
-.hero-subtitle {
-  font-size: 0.95rem;
-  color: #e2e8f0;
-  margin-bottom: 1.2rem;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-.hero-button {
-  background-color: #2563eb;
-  color: white;
-  font-size: 0.85rem;
-  padding: 0.5rem 1.3rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.3s ease;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-}
-
-.hero-button:hover {
-  background-color: #1d4ed8;
-}
-
-/* Service Section */
 .section {
-  margin-bottom: 64px;
+  padding: 32px 0;
 }
 
 .section-title {
-  font-size: 1.75rem;
-  font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 1rem 0 1.5rem;
   text-align: center;
-  margin-bottom: 24px;
-  color: #1e293b;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.hero-section {
+  background-image: url('/images/carwash.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 24px;
+  height: 320px;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-bottom: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 24px;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.hero-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+.hero-subtitle {
+  color: #e2e8f0;
+  margin-bottom: 1.2rem;
+}
+.hero-button {
+  background-color: #2563eb;
+  color: #fff;
+  padding: 0.5rem 1.3rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+.hero-button:hover {
+  background-color: #1d4ed8;
 }
 
 .service-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  justify-items: center;
   gap: 16px;
 }
-
 .service-card {
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  text-align: center;
   background: white;
   border-radius: 16px;
-  text-align: center;
   padding: 16px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  transition: background 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
-
-.service-card:hover {
-  background: #eff6ff;
-}
-
 .service-icon {
   width: 40px;
   height: 40px;
   margin-bottom: 8px;
 }
-
 .service-name {
   font-weight: 500;
   color: #334155;
-  margin-top: 4px;
+  text-align: center;
 }
 
-/* Why Choose Us */
-.why-section {
-  background: #f1f5f9;
-  border-radius: 24px;
-  padding: 64px 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+.gallery-custom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.gallery-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+.gallery-item img:hover {
+  transform: scale(1.03);
 }
 
 .why-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 24px;
-  text-align: center;
 }
-
 .why-card {
   background: white;
-  padding: 24px;
   border-radius: 16px;
+  padding: 24px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  min-height: 220px;
+  text-align: center;
 }
-
-
-
 .why-icon .icon {
   font-size: 2.5rem;
   color: #2563eb;
   margin-bottom: 16px;
 }
-
 .why-title {
-  font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 8px;
-  min-height: 3rem; /* 👈 ทำให้ข้อความ title อยู่บรรทัดเดียวหรือสอง แต่สูงเท่ากันทุกการ์ด */
 }
-
 .why-text {
-  font-size: 0.85rem;
   color: #64748b;
-  line-height: 1.4;
-  min-height: 3rem; /* 👈 ให้ข้อความรองรับได้ 2 บรรทัดสม่ำเสมอ */
-}
-@media (max-width: 1024px) {
-  .why-grid {
-    grid-template-columns: repeat(2, 1fr); /* จอแท็บเล็ต */
-  }
+  font-size: 0.9rem;
 }
 
-@media (max-width: 640px) {
-  .why-grid {
-    grid-template-columns: 1fr; /* จอมือถือ */
+@media (max-width: 768px) {
+  .gallery-custom {
+    grid-template-columns: 1fr;
+  }
+  .gallery-item img {
+    height: 160px;
   }
 }
 </style>

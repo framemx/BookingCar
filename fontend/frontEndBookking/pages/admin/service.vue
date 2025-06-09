@@ -1,36 +1,50 @@
 <template>
-  <div class="container">
-    <h1>จัดการบริการ</h1>
+  <div class="content-wrapper">
+    <h1 class="page-title">🛠️ จัดการบริการ</h1>
 
-    <button @click="showAddModal = true" class="btn-add">เพิ่มบริการ</button>
+    <div class="action-bar">
+      <button @click="showAddModal = true" class="btn-add">
+        ➕ เพิ่มบริการ
+      </button>
+    </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ชื่อบริการ</th>
-          <th>รายละเอียด</th>
-          <th>ราคา (บาท)</th>
-          <th>ระยะเวลา (นาที)</th>
-          <th>จัดการ</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="service in services" :key="service.id">
-          <td>{{ service.sName }}</td>
-          <td>{{ service.description }}</td>
-          <td>{{ service.price }}</td>
-          <td>{{ service.durationMinutes }}</td>
-          <td>
-            <button class="btn-edit" @click="openEditModal(service)">แก้ไข</button>
-            <button class="btn-delete" @click="confirmDelete(service)">ลบ</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="booking-table">
+        <thead>
+          <tr>
+            <th>ชื่อบริการ</th>
+            <th>รายละเอียด</th>
+            <th>ราคา (บาท)</th>
+            <th>ระยะเวลา (นาที)</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="service in services" :key="service.id">
+            <td>{{ service.sName }}</td>
+            <td>{{ service.description }}</td>
+            <td>{{ service.price }}</td>
+            <td>{{ service.durationMinutes }}</td>
+            <td class="actions">
+              <button class="btn-edit" @click="openEditModal(service)">
+                แก้ไข
+              </button>
+              <button class="btn-delete" @click="confirmDelete(service)">
+                ลบ
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- Modal เพิ่มบริการ -->
     <teleport to="body">
-      <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
+      <div
+        v-if="showAddModal"
+        class="modal-overlay"
+        @click.self="closeAddModal"
+      >
         <div class="modal">
           <h2>เพิ่มบริการใหม่</h2>
           <form @submit.prevent="submitNewService">
@@ -40,18 +54,38 @@
             </div>
             <div>
               <label for="description">รายละเอียด</label>
-              <textarea v-model="newService.description" id="description" required></textarea>
+              <textarea
+                v-model="newService.description"
+                id="description"
+                required
+              ></textarea>
             </div>
             <div>
               <label for="price">ราคา (บาท)</label>
-              <input v-model.number="newService.price" id="price" type="number" min="0" required />
+              <input
+                v-model.number="newService.price"
+                id="price"
+                type="number"
+                min="0"
+                required
+              />
             </div>
             <div>
               <label for="durationMinutes">ระยะเวลา (นาที)</label>
-              <input v-model.number="newService.durationMinutes" id="durationMinutes" type="number" min="1" required />
+              <input
+                v-model.number="newService.durationMinutes"
+                id="durationMinutes"
+                type="number"
+                min="1"
+                required
+              />
             </div>
-            <button type="submit" class="btn-submit">บันทึก</button>
-            <button type="button" @click="closeAddModal" class="btn-cancel">ยกเลิก</button>
+            <div class="modal-footer">
+              <button type="submit" class="btn-submit">บันทึก</button>
+              <button type="button" @click="closeAddModal" class="btn-cancel">
+                ยกเลิก
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -59,7 +93,11 @@
 
     <!-- Modal แก้ไขบริการ -->
     <teleport to="body">
-      <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div
+        v-if="showEditModal"
+        class="modal-overlay"
+        @click.self="closeEditModal"
+      >
         <div class="modal">
           <h2>แก้ไขบริการ</h2>
           <form @submit.prevent="submitEditService">
@@ -69,18 +107,38 @@
             </div>
             <div>
               <label for="editDescription">รายละเอียด</label>
-              <textarea v-model="editServiceData.description" id="editDescription" required></textarea>
+              <textarea
+                v-model="editServiceData.description"
+                id="editDescription"
+                required
+              ></textarea>
             </div>
             <div>
               <label for="editPrice">ราคา (บาท)</label>
-              <input v-model.number="editServiceData.price" id="editPrice" type="number" min="0" required />
+              <input
+                v-model.number="editServiceData.price"
+                id="editPrice"
+                type="number"
+                min="0"
+                required
+              />
             </div>
             <div>
               <label for="editDurationMinutes">ระยะเวลา (นาที)</label>
-              <input v-model.number="editServiceData.durationMinutes" id="editDurationMinutes" type="number" min="1" required />
+              <input
+                v-model.number="editServiceData.durationMinutes"
+                id="editDurationMinutes"
+                type="number"
+                min="1"
+                required
+              />
             </div>
-            <button type="submit" class="btn-submit">บันทึก</button>
-            <button type="button" @click="closeEditModal" class="btn-cancel">ยกเลิก</button>
+            <div class="modal-footer">
+              <button type="submit" class="btn-submit">บันทึก</button>
+              <button type="button" @click="closeEditModal" class="btn-cancel">
+                ยกเลิก
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -88,12 +146,18 @@
 
     <!-- Modal ยืนยันลบ -->
     <teleport to="body">
-      <div v-if="showDeleteModal" class="modal-overlay" @click.self="cancelDelete">
+      <div
+        v-if="showDeleteModal"
+        class="modal-overlay"
+        @click.self="cancelDelete"
+      >
         <div class="modal">
           <h3>ยืนยันการลบ</h3>
           <p>คุณต้องการลบบริการ "{{ serviceToDelete?.sName }}" หรือไม่?</p>
-          <button class="btn-delete" @click="deleteService">ใช่</button>
-          <button class="btn-cancel" @click="cancelDelete">ไม่</button>
+          <div class="modal-footer">
+            <button class="btn-delete" @click="deleteService">ใช่</button>
+            <button class="btn-cancel" @click="cancelDelete">ไม่</button>
+          </div>
         </div>
       </div>
     </teleport>
@@ -101,8 +165,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'admin' })
-
+definePageMeta({ layout: "admin" });
 import { ref, reactive, onMounted } from "vue";
 
 interface Service {
@@ -115,7 +178,6 @@ interface Service {
 
 const services = ref<Service[]>([]);
 
-// Modal เพิ่มบริการ
 const showAddModal = ref(false);
 const newService = reactive({
   sName: "",
@@ -123,32 +185,28 @@ const newService = reactive({
   price: 0,
   durationMinutes: 0,
 });
+
 function closeAddModal() {
   showAddModal.value = false;
-  newService.sName = "";
-  newService.description = "";
-  newService.price = 0;
-  newService.durationMinutes = 0;
-}
-async function submitNewService() {
-  try {
-    const res = await fetch("http://localhost:3000/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newService),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "เพิ่มบริการไม่สำเร็จ");
-    }
-    await fetchServices();
-    closeAddModal();
-  } catch (err) {
-    alert(err instanceof Error ? err.message : String(err));
-  }
+  Object.assign(newService, {
+    sName: "",
+    description: "",
+    price: 0,
+    durationMinutes: 0,
+  });
 }
 
-// Modal แก้ไขบริการ
+async function submitNewService() {
+  const res = await fetch("http://localhost:3000/services", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newService),
+  });
+  if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ");
+  await fetchServices();
+  closeAddModal();
+}
+
 const showEditModal = ref(false);
 const editServiceData = reactive<Service>({
   id: 0,
@@ -157,285 +215,242 @@ const editServiceData = reactive<Service>({
   price: 0,
   durationMinutes: 0,
 });
+
 function openEditModal(service: Service) {
-  editServiceData.id = service.id;
-  editServiceData.sName = service.sName;
-  editServiceData.description = service.description;
-  editServiceData.price = service.price;
-  editServiceData.durationMinutes = service.durationMinutes;
+  Object.assign(editServiceData, service);
   showEditModal.value = true;
 }
 function closeEditModal() {
   showEditModal.value = false;
 }
-
-// ส่งข้อมูลแก้ไขไป API
 async function submitEditService() {
-  try {
-    const res = await fetch(`http://localhost:3000/services/${editServiceData.id}`, {
+  const res = await fetch(
+    `http://localhost:3000/services/${editServiceData.id}`,
+    {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sName: editServiceData.sName,
-        description: editServiceData.description,
-        price: editServiceData.price,
-        durationMinutes: editServiceData.durationMinutes,
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "แก้ไขบริการไม่สำเร็จ");
+      body: JSON.stringify(editServiceData),
     }
-    await fetchServices();
-    closeEditModal();
-  } catch (err) {
-    alert(err instanceof Error ? err.message : String(err));
-  }
+  );
+  if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ");
+  await fetchServices();
+  closeEditModal();
 }
 
-// Modal ลบ
 const showDeleteModal = ref(false);
 const serviceToDelete = ref<Service | null>(null);
+
 function confirmDelete(service: Service) {
   serviceToDelete.value = service;
   showDeleteModal.value = true;
 }
 function cancelDelete() {
-  serviceToDelete.value = null;
   showDeleteModal.value = false;
+  serviceToDelete.value = null;
 }
 async function deleteService() {
   if (!serviceToDelete.value) return;
-  try {
-    const res = await fetch(`http://localhost:3000/services/${serviceToDelete.value.id}`, {
+  const res = await fetch(
+    `http://localhost:3000/services/${serviceToDelete.value.id}`,
+    {
       method: "DELETE",
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "ลบบริการไม่สำเร็จ");
     }
-    await fetchServices();
-    cancelDelete();
-  } catch (err) {
-    alert(err instanceof Error ? err.message : String(err));
-  }
+  );
+  if (!res.ok) return alert("ลบบริการไม่สำเร็จ");
+  await fetchServices();
+  cancelDelete();
 }
 
-// ดึงข้อมูลบริการจาก API
 async function fetchServices() {
-  try {
-    const res = await fetch("http://localhost:3000/services");
-    if (!res.ok) throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
-    const data = await res.json();
-    services.value = data.data || [];
-  } catch (err) {
-    alert(err instanceof Error ? err.message : String(err));
-  }
+  const res = await fetch("http://localhost:3000/services");
+  const data = await res.json();
+  services.value = data.data || [];
 }
-
-onMounted(() => {
-  fetchServices();
-});
+onMounted(fetchServices);
 </script>
 
 <style scoped>
-.container {
-  max-width: 1200px;
-  margin: 3rem auto;
-  padding: 2rem;
-  font-family: "Sarabun", sans-serif;
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");
+
+.content-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  font-family: "Kanit", sans-serif;
   color: #1e293b;
-  background-color: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
-h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 2rem;
-  text-align: center;
-  color: #1e40af;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
 }
-.btn-add {
-  background-color: #1e40af;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
+
+.page-title {
+  font-size: 2rem;
+  color: #1e3a8a;
   font-weight: 700;
-  border-radius: 8px;
+  margin: 0;
+  text-align: center;
+}
+
+.btn-add {
+  background: #1e3a8a;
+  color: white;
+  padding: 0.4rem 1rem; /* ปรับขนาดปุ่มให้เล็กลง */
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px; /* โค้งเหมือนปุ่มอื่น */
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s;
-  margin-bottom: 2rem;
-  display: block;
-  margin-left: auto;
-  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 3px 10px rgba(30, 58, 138, 0.2);
+  font-size: 0.95rem; /* เล็กลงเล็กน้อย */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
 }
+
 .btn-add:hover {
-  background-color: #1d4ed8;
-  transform: translateY(-2px);
+  background: #1d4ed8;
 }
-table {
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.booking-table {
   width: 100%;
   border-collapse: collapse;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  background-color: #f9fafb;
-  border-radius: 12px;
-  overflow: hidden;
+  font-size: 0.95rem;
 }
-thead {
-  background-color: #1e40af;
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-th, td {
-  padding: 1rem 1.5rem;
-  text-align: left;
-  border-bottom: 2px solid #e2e8f0;
-  font-size: 1rem;
-}
-tbody tr:hover {
-  background-color: #e0e7ff;
-  transition: background-color 0.3s ease;
-}
-.btn-edit {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: 1rem;
-  font-size: 1rem;
+
+.booking-table th {
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 1rem;
+  text-align: center;
   font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.2s;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-.btn-edit:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
+
+.booking-table td {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
 }
+
+.booking-table td.actions {
+  display: flex;
+  flex-direction: row; /* เดิมคือ column */
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-edit,
 .btn-delete {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95rem;
+  border-radius: 9999px; /* ทำให้โค้งเท่ากับปุ่มเพิ่มบริการ */
+  font-weight: normal;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.2s;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  min-width: unset; /* ยกเลิกบังคับความกว้าง */
+  width: auto;      /* ให้ขนาดตามเนื้อข้อความ */
+  white-space: nowrap;
 }
-.btn-delete:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
+
+.btn-edit {
+  background: #3b82f6;
+  color: white;
 }
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
+
 .modal {
-  background-color: #ffffff;
-  padding: 2.5rem 3rem;
-  border-radius: 15px;
-  max-width: 500px;
+  background: white;
+  padding: 2.5rem;
+  border-radius: 16px;
   width: 90%;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-  font-family: "Sarabun", sans-serif;
-  animation: fadeIn 0.3s ease-in-out;
+  max-width: 550px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  font-family: "Kanit", sans-serif;
 }
-.modal h2, .modal h3 {
+
+.modal h2,
+.modal h3 {
   margin-bottom: 1.5rem;
-  color: #1e40af;
-  font-weight: 800;
-  font-size: 1.8rem;
   text-align: center;
-}
-.modal p {
-  margin-bottom: 2rem;
-  color: #334155;
-  font-size: 1.1rem;
-  text-align: center;
-}
-.modal form div {
-  margin-bottom: 1.5rem;
-}
-.modal label {
-  display: block;
+  color: #1e3a8a;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.6rem;
-  font-size: 1.1rem;
+}
+
+.modal label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
   color: #1e293b;
 }
+
 .modal input,
 .modal textarea {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 1.1rem;
-  font-family: "Sarabun", sans-serif;
-  background-color: #f9fafb;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-family: "Kanit", sans-serif;
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
 }
-.modal input:focus,
-.modal textarea:focus {
-  border-color: #1e40af;
-  box-shadow: 0 0 10px rgba(30, 64, 175, 0.2);
-  outline: none;
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
-.modal textarea {
-  resize: vertical;
-  min-height: 80px;
-}
+
 .btn-submit {
-  background-color: #1e40af;
+  background: #1e3a8a;
   color: white;
+  padding: 0.6rem 1.4rem;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 1.1rem;
-  margin-right: 1.5rem;
-  box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
-  transition: background-color 0.3s ease, transform 0.2s;
+  cursor: pointer;
+  font-size: 1rem;
 }
-.btn-submit:hover {
-  background-color: #1d4ed8;
-  transform: translateY(-2px);
-}
+
 .btn-cancel {
-  background-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 0.6rem 1.4rem;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 1.1rem;
-  color: #334155;
-  transition: background-color 0.3s ease, transform 0.2s;
+  cursor: pointer;
+  font-size: 1rem;
 }
-.btn-cancel:hover {
-  background-color: #cbd5e1;
-  transform: translateY(-2px);
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
 }
 </style>

@@ -11,6 +11,7 @@
           <NuxtLink to="/user/home" class="nav-link" :class="{ active: isActive('/user/home') }">HOME</NuxtLink>
           <NuxtLink to="/user/bookingWelcome" class="nav-link" :class="{ active: isActive('/user/bookingWelcome') }">RESERVATIONS</NuxtLink>
           <NuxtLink to="/user/bookingForm" class="nav-link" :class="{ active: isActive('/user/bookingForm') }">BOOKING</NuxtLink>
+          <NuxtLink to="/user/history" class="nav-link" :class="{ active: isActive('/user/history') }">HISTORY</NuxtLink>
         </div>
 
         <!-- Logout Button -->

@@ -1,17 +1,22 @@
 <template>
   <div class="container">
-    <h2>รายการ Slot ทั้งหมด</h2>
+    <h2 class="page-title">🗓️ รายการ Slot ทั้งหมด</h2>
 
     <div class="action-bar">
-      <button class="btn-manage-slot" @click="goToSlotManagement">
-        จัดการ Slot
+      <button class="btn-add" @click="goToSlotManagement">
+        ➕ จัดการ Slot
       </button>
     </div>
 
-    <!-- ปฏิทินเลือกวันที่ -->
     <div class="filter-bar">
-      <label for="filterDate">เลือกวันที่:</label>
-      <input type="date" id="filterDate" v-model="selectedDate" />
+      <label for="filterDate" class="filter-label">
+        <i class="i-lucide-calendar"></i>
+        เลือกวันที่:
+      </label>
+      <div class="date-picker-wrapper">
+        <i class="i-lucide-calendar"></i>
+        <input type="date" id="filterDate" v-model="selectedDate" class="custom-date-input" />
+      </div>
       <button v-if="selectedDate" @click="clearDateFilter">ล้างตัวกรอง</button>
     </div>
 
@@ -39,34 +44,17 @@
       </div>
     </div>
 
-    <!-- Edit Slot Dialog -->
     <dialog ref="editDialog" class="edit-dialog">
       <form @submit.prevent="saveEdit">
         <h3>แก้ไขข้อมูล Slot</h3>
 
-        <label>
-          ชื่อ Slot:
-          <input type="text" v-model="editSlotData.slotName" required />
-        </label>
-
-        <label>
-          วันที่:
-          <input type="date" v-model="editSlotData.date" required />
-        </label>
-
-        <label>
-          เวลาเริ่ม:
-          <input type="time" v-model="editSlotData.startTime" required />
-        </label>
-
-        <label>
-          เวลาสิ้นสุด:
-          <input type="time" v-model="editSlotData.endTime" required />
-        </label>
-
+        <label>ชื่อ Slot:<input type="text" v-model="editSlotData.slotName" required class="form-input" /></label>
+        <label>วันที่:<input type="date" v-model="editSlotData.date" required class="form-input" /></label>
+        <label>เวลาเริ่ม:<input type="time" v-model="editSlotData.startTime" required class="form-input" /></label>
+        <label>เวลาสิ้นสุด:<input type="time" v-model="editSlotData.endTime" required class="form-input" /></label>
         <label>
           สถานะ:
-          <select v-model="editSlotData.status" required>
+          <select v-model="editSlotData.status" required class="form-input">
             <option value="AVAILABLE">AVAILABLE</option>
             <option value="BOOKED">BOOKED</option>
           </select>
@@ -74,9 +62,7 @@
 
         <div class="dialog-buttons">
           <button type="submit" class="btn-save">บันทึก</button>
-          <button type="button" class="btn-cancel" @click="closeEditDialog">
-            ยกเลิก
-          </button>
+          <button type="button" class="btn-cancel" @click="closeEditDialog">ยกเลิก</button>
         </div>
       </form>
     </dialog>
@@ -103,10 +89,7 @@ const editSlotData = ref({
   status: "AVAILABLE",
 });
 
-// ตัวแปรเก็บวันที่ที่เลือกเพื่อกรอง
 const selectedDate = ref("");
-
-// กรอง slot ตามวันที่เลือก (ถ้าไม่มีเลือก แสดงทั้งหมด)
 const filteredSlots = computed(() => {
   if (!selectedDate.value) return slots.value;
   return slots.value.filter((slot) => slot.date === selectedDate.value);
@@ -117,14 +100,7 @@ function goToSlotManagement() {
 }
 
 function openEditDialog(slot) {
-  editSlotData.value = {
-    id: slot.id,
-    slotName: slot.slotName || "",
-    date: slot.date,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-    status: slot.status || "AVAILABLE",
-  };
+  editSlotData.value = { ...slot };
   editDialog.value.showModal();
 }
 
@@ -135,40 +111,24 @@ function closeEditDialog() {
 async function saveEdit() {
   try {
     const { date, startTime, endTime } = editSlotData.value;
-    if (!date || !startTime || !endTime)
-      throw new Error("กรุณากรอกวันที่และเวลาให้ครบ");
+    if (!date || !startTime || !endTime) throw new Error("กรุณากรอกวันที่และเวลาให้ครบ");
 
     const start = new Date(`1970-01-01T${startTime}:00`);
     const end = new Date(`1970-01-01T${endTime}:00`);
-    if (start >= end) {
-      throw new Error("เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด");
-    }
+    if (start >= end) throw new Error("เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด");
 
-    const payload = {
-      slotName: editSlotData.value.slotName,
-      date: date,
-      startTime: startTime,
-      endTime: endTime,
-      status: editSlotData.value.status,
-    };
+    const payload = { ...editSlotData.value };
 
-    const res = await fetch(
-      `http://localhost:3000/slots/${editSlotData.value.id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
+    const res = await fetch(`http://localhost:3000/slots/${editSlotData.value.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-    if (!res.ok)
-      throw new Error((await res.json()).error || "แก้ไข Slot ไม่สำเร็จ");
+    if (!res.ok) throw new Error((await res.json()).error || "แก้ไข Slot ไม่สำเร็จ");
 
-    const updatedIndex = slots.value.findIndex(
-      (s) => s.id === editSlotData.value.id
-    );
-    if (updatedIndex !== -1)
-      slots.value[updatedIndex] = { id: editSlotData.value.id, ...payload };
+    const index = slots.value.findIndex((s) => s.id === payload.id);
+    if (index !== -1) slots.value[index] = payload;
 
     alert("แก้ไข Slot เรียบร้อยแล้ว");
     closeEditDialog();
@@ -183,8 +143,7 @@ async function deleteSlot(id) {
     const res = await fetch(`http://localhost:3000/slots/${id}`, {
       method: "DELETE",
     });
-    if (!res.ok)
-      throw new Error((await res.json()).error || "ลบ Slot ไม่สำเร็จ");
+    if (!res.ok) throw new Error((await res.json()).error || "ลบ Slot ไม่สำเร็จ");
     slots.value = slots.value.filter((s) => s.id !== id);
     alert("ลบ Slot เรียบร้อยแล้ว");
   } catch (err) {
@@ -196,8 +155,7 @@ async function fetchSlots() {
   loading.value = true;
   try {
     const res = await fetch("http://localhost:3000/slots");
-    if (!res.ok)
-      throw new Error((await res.json()).error || "โหลดข้อมูลไม่สำเร็จ");
+    if (!res.ok) throw new Error((await res.json()).error || "โหลดข้อมูลไม่สำเร็จ");
     slots.value = await res.json();
   } catch (err) {
     alert(err.message);
@@ -208,31 +166,11 @@ async function fetchSlots() {
 
 function formatTime(timeString) {
   if (!timeString) return "ไม่มีเวลา";
-
-  let normalizedTime = timeString;
-
-  if (/^\d{4}$/.test(timeString)) {
-    normalizedTime = timeString.slice(0, 2) + ":" + timeString.slice(2);
-  }
-
-  const fullTimeString =
-    normalizedTime.length === 5 ? `${normalizedTime}:00` : normalizedTime;
-
-  try {
-    const time = new Date(`1970-01-01T${fullTimeString}`);
-    if (isNaN(time.getTime())) return "เวลาผิดพลาด";
-
-    return time.toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  } catch {
-    return "เวลาผิดพลาด";
-  }
+  if (/^\d{4}$/.test(timeString)) timeString = timeString.slice(0, 2) + ":" + timeString.slice(2);
+  return new Date(`1970-01-01T${timeString.length === 5 ? timeString : timeString + ':00'}`)
+    .toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-// เคลียร์ตัวกรองวันที่
 function clearDateFilter() {
   selectedDate.value = "";
 }
@@ -241,96 +179,130 @@ onMounted(fetchSlots);
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap');
+
 .container {
-  max-width: 1200px;
+  max-width: 960px;
   margin: 2rem auto;
-  padding: 2rem 2.5rem;
+  padding: 2rem;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  font-family: "Sarabun", sans-serif;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  font-family: 'Kanit', sans-serif;
   color: #1e293b;
 }
 
-h2 {
+.page-title {
   text-align: center;
-  color: #2563eb;
+  font-size: 2rem;
+  color: #1e3a8a;
   font-weight: 700;
-  margin-bottom: 1.8rem;
-}
-
-.action-bar {
-  text-align: right;
   margin-bottom: 1.5rem;
 }
 
-.btn-manage-slot {
-  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.btn-add {
+  background: #1e3a8a;
   color: white;
-  padding: 0.7rem 1.8rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 10px;
+  padding: 0.55rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 9999px;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .filter-bar {
-  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-weight: 600;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  font-size: 1rem;
 }
 
-.loading,
-.empty {
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #475569;
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1e3a8a;
+}
+
+.date-picker-wrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid #3b82f6;
+  border-radius: 9999px;
+  padding: 0.3rem 1rem;
+  gap: 0.5rem;
+  background-color: white;
+}
+
+.custom-date-input {
+  border: none;
+  outline: none;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  background: transparent;
+}
+
+.i-lucide-calendar {
+  color: #1e3a8a;
+  font-size: 1.2rem;
 }
 
 .slot-list {
   display: flex;
   flex-direction: column;
-  gap: 1.3rem;
+  gap: 1.2rem;
 }
 
 .slot-item {
-  padding: 1rem 1.4rem;
-  border-radius: 12px;
-  box-shadow: 0 0 10px #cbd5e1;
-  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  font-size: 1rem;
+  transition: transform 0.2s;
 }
 
-.slot-item p {
-  margin-bottom: 0.5rem;
+.slot-item:hover {
+  transform: scale(1.01);
 }
 
 .available {
   color: #16a34a;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .booked {
   color: #dc2626;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .btn-group {
-  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .btn-edit,
 .btn-delete {
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: 6px;
-  padding: 0.45rem 1rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 9999px;
   border: none;
   cursor: pointer;
-  margin-right: 0.6rem;
 }
 
 .btn-edit {
@@ -343,184 +315,59 @@ h2 {
   color: white;
 }
 
-
 .edit-dialog {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 9999;
-  width: 100%;
-  max-width: 460px;
-  padding: 2rem 2.5rem;
-  border: none;
-  border-radius: 16px;
-  background-color: #ffffff;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-}
-
-
-.edit-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.35);
-}
-
-.edit-dialog form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-
-.edit-dialog label {
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.edit-dialog input[type="text"],
-.edit-dialog input[type="date"],
-.edit-dialog input[type="time"],
-.edit-dialog select {
-  margin-top: 0.3rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-}
-
-.dialog-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.btn-save {
-  background-color: #16a34a;
-  color: white;
-  font-weight: 700;
-  border: none;
-  padding: 0.6rem 1.4rem;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.btn-cancel {
-  background-color: #6b7280;
-  color: white;
-  font-weight: 700;
-  border: none;
-  padding: 0.6rem 1.4rem;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.filter-bar {
-  margin-bottom: 1.8rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #334155; /* สีเข้มหน่อย */
-  user-select: none;
-}
-
-.filter-bar label {
-  white-space: nowrap;
-}
-
-.filter-bar input[type="date"] {
-  padding: 0.5rem 0.8rem;
-  border-radius: 12px;
-  border: 2px solid #3b82f6; /* สีฟ้า */
-  box-shadow: 0 2px 6px rgb(59 130 246 / 0.3);
-  font-size: 1.05rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.filter-bar input[type="date"]:focus {
-  outline: none;
-  border-color: #2563eb; /* ฟ้าหน้าเข้มขึ้นเวลาตั้งค่า */
-  box-shadow: 0 0 8px #2563eb;
-}
-
-.filter-bar button {
-  background-color: #ef4444; /* สีแดงสด */
-  border: none;
-  border-radius: 12px;
-  padding: 0.45rem 1.1rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgb(239 68 68 / 0.4);
-  transition: background-color 0.25s ease;
-  user-select: none;
-}
-
-.filter-bar button:hover {
-  background-color: #dc2626;
-}
-
-.filter-bar button:active {
-  box-shadow: none;
-}
-/* ปรับ popup แก้ไข slot */
-.edit-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.35);
-}
-
-.edit-dialog {
   width: 100%;
   max-width: 460px;
   border: none;
   border-radius: 16px;
-  padding: 2rem 2.5rem;
   background-color: #ffffff;
+  padding: 2rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  
+  z-index: 999;
 }
 
-
+.edit-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
 
 .edit-dialog h3 {
   font-size: 1.4rem;
   color: #2563eb;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   text-align: center;
 }
 
 .edit-dialog form {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
+  width: 100%;
 }
 
 .edit-dialog label {
   display: flex;
   flex-direction: column;
-  font-size: 0.95rem;
+  width: 100%;
+}
+
+.form-input {
   font-weight: 600;
   color: #1e293b;
-}
-
-.edit-dialog input[type="text"],
-.edit-dialog input[type="date"],
-.edit-dialog input[type="time"],
-.edit-dialog select {
-  margin-top: 0.4rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
   border: 1.5px solid #cbd5e1;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
   background-color: #f9fafb;
-  transition: border-color 0.3s ease;
   font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.edit-dialog input:focus,
-.edit-dialog select:focus {
+.form-input:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
@@ -530,34 +377,39 @@ h2 {
   display: flex;
   justify-content: space-between;
   margin-top: 1.5rem;
-}
-
-.dialog-buttons button {
-  padding: 0.6rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.25s ease;
+  width: 100%;
 }
 
 .btn-save {
   background-color: #22c55e;
   color: white;
-}
-
-.btn-save:hover {
-  background-color: #16a34a;
+  font-weight: 700;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  width: 45%;
 }
 
 .btn-cancel {
   background-color: #e2e8f0;
   color: #1e293b;
+  font-weight: 700;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  width: 45%;
 }
 
-.btn-cancel:hover {
-  background-color: #cbd5e1;
+.loading,
+.empty {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 1.5rem 0;
 }
-
 </style>
