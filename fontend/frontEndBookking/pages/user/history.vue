@@ -107,10 +107,19 @@ const displayedBookings = computed(() => {
 });
 
 onMounted(async () => {
-  const res = await fetch('http://localhost:3000/bookings');
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const userEmail = userData.email;
+
+  const res = await fetch(`http://localhost:3000/bookings?userEmail=${userEmail}`);
   const data = await res.json();
-  allBookings.value = data.filter(b => b.status === 'confirmed');
+
+  allBookings.value = data; // ไม่กรองสถานะเลย
+
 });
+
+
+
+
 </script>
 
 <style scoped>
@@ -240,12 +249,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .status-pending {
   font-size: 0.85rem;
   font-weight: 500;
-  padding: 0.3rem 0.7rem;
+  padding: 0.3rem 1.2rem;
   border-radius: 9999px;
   display: inline-block;
-  min-width: 64px;
+  min-width: 100px; /* ✅ ปรับให้กว้างพอสำหรับทุกข้อความ */
   text-align: center;
 }
+
 
 .status-confirmed {
   background: #d1fae5;

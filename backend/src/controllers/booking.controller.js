@@ -33,6 +33,7 @@ const getAllBookings = async (request, h) => {
   return await bookingService.getAllBookings();
 };
 
+
 // ✅ Get Booking by ID
 const getBookingById = async (request, h) => {
   try {

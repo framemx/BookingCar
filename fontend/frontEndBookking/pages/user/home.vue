@@ -5,8 +5,12 @@
       <section class="hero-section">
         <div class="hero-content">
           <h1 class="hero-title">🚗 ค้นหาบริการดูแลรถที่ดีที่สุด</h1>
-          <p class="hero-subtitle">จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว</p>
-          <NuxtLink to="/user/bookingForm" class="hero-button">เริ่มจองคิวตอนนี้</NuxtLink>
+          <p class="hero-subtitle">
+            จองบริการดูแลรถยนต์ได้อย่างสะดวกและรวดเร็ว
+          </p>
+          <NuxtLink to="/user/bookingForm" class="hero-button"
+            >เริ่มจองคิวตอนนี้</NuxtLink
+          >
         </div>
       </section>
 
@@ -14,18 +18,63 @@
       <section class="section">
         <h2 class="section-title text-center">ประเภทบริการ</h2>
         <div class="service-grid">
-          <div v-for="type in serviceTypes" :key="type.name" class="service-card">
+          <div
+            v-for="type in serviceTypes"
+            :key="type.name"
+            class="service-card"
+          >
             <img :src="type.icon" alt="" class="service-icon" />
             <p class="service-name">{{ type.name }}</p>
           </div>
         </div>
       </section>
 
+      <!-- Article Section -->
+      <section class="section article-section">
+        <h2 class="article-title text-center">
+          🚘 การดูแลรถไม่ใช่เรื่องยาก... แค่เริ่มจองกับเรา
+        </h2>
+        <p class="article-text">
+          รถของคุณ ไม่ได้แค่พาไปถึงที่หมาย — แต่มันคือความปลอดภัย ความภูมิใจ
+          และสไตล์ชีวิตของคุณ ไม่ว่าจะเป็นการเดินทางไปทำงาน ส่งลูกไปโรงเรียน
+          หรือขับออกทริปสุดพิเศษในวันหยุด รถที่สะอาด เงางาม และพร้อมใช้งานเสมอ
+          คือหนึ่งในความมั่นใจที่เราทุกคนคู่ควร
+        </p>
+        <p class="article-text">
+          แล้วจะดีแค่ไหน... ถ้าการดูแลรถของคุณกลายเป็นเรื่องง่าย
+          แค่ปลายนิ้วสัมผัส?
+          เรามีระบบจองคิวออนไลน์ที่ออกแบบมาให้คุณใช้งานง่ายสุด ๆ
+          เลือกรอบเวลาที่สะดวกโดยไม่ต้องโทรจอง ไม่ต้องลุ้นว่าร้านจะเต็ม
+          คุณเพียงแค่คลิก
+          แล้วปล่อยให้ทีมช่างผู้เชี่ยวชาญของเราจัดการทุกอย่างอย่างใส่ใจ
+        </p>
+        <p class="article-text t1">"ครบ จบ ทุกบริการ ในที่เดียว"</p>
+        <p class="article-text">
+          ตั้งแต่ล้างรถ ขัดเคลือบ ดูดฝุ่น พ่นฆ่าเชื้อ ไปจนถึงการดูแลเบาะและภายใน
+          — เราใช้ผลิตภัณฑ์คุณภาพสูง
+          และเครื่องมือมาตรฐานเดียวกับศูนย์บริการระดับมืออาชีพ
+          เพื่อให้รถของคุณดูดีเหมือนใหม่… ทุกครั้งที่คุณขับออกไป
+        </p>
+        <p class="article-text">
+          เริ่มต้นง่าย ๆ วันนี้ เพราะการดูแลรถ... คือการดูแลชีวิต และชีวิตที่ดี
+          เริ่มได้จากการจองคิวกับเรา 💙
+        </p>
+      </section>
+
       <!-- Gallery -->
-      <section class="section">
-        <h2 class="section-title text-center">ตัวอย่างบริการ</h2>
+      <section class="section section-gallery">
+        <h2 class="section-title text-center">✨ ภาพบรรยากาศและบริการของเรา</h2>
+        <p class="intro-subtext">
+          เราใส่ใจในทุกรายละเอียด เพื่อให้รถของคุณเงางาม สะอาด
+          และพร้อมลุยทุกเส้นทาง
+        </p>
         <div class="gallery-custom">
-          <div v-for="img in galleryImages" :key="img.src" class="gallery-item">
+          <div
+            v-for="img in galleryImages"
+            :key="img.src"
+            class="gallery-item"
+            @click="showImagePopup(img.src)"
+          >
             <img :src="img.src" :alt="img.alt" />
           </div>
         </div>
@@ -44,12 +93,32 @@
           </div>
         </div>
       </section>
+
+      <!-- Popup Image Modal -->
+      <div v-if="activeImage" class="image-modal" @click="closeImagePopup">
+        <div class="modal-inner" @click.stop>
+          <button class="close-button" @click="closeImagePopup">❌</button>
+          <img :src="activeImage" class="modal-image" alt="ภาพตัวอย่าง" />
+        </div>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+
 definePageMeta({ layout: "user" });
+
+const activeImage = ref<string | null>(null);
+
+function showImagePopup(imageSrc: string) {
+  activeImage.value = imageSrc;
+}
+
+function closeImagePopup() {
+  activeImage.value = null;
+}
 
 const serviceTypes = [
   { name: "ล้างรถ", icon: "/icon/car-wash.png" },
@@ -70,10 +139,26 @@ const galleryImages = [
 ];
 
 const reasons = [
-  { title: "บริการรวดเร็ว", text: "เลือกเวลาที่คุณสะดวกได้ทันที", icon: "i-lucide-clock" },
-  { title: "ช่างมืออาชีพ", text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ", icon: "i-lucide-users" },
-  { title: "ราคาชัดเจน", text: "ไม่มีค่าใช้จ่ายแอบแฝง", icon: "i-lucide-badge-dollar-sign" },
-  { title: "จองง่ายผ่านมือถือ", text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์", icon: "i-lucide-smartphone" },
+  {
+    title: "บริการรวดเร็ว",
+    text: "เลือกเวลาที่คุณสะดวกได้ทันที",
+    icon: "i-lucide-clock",
+  },
+  {
+    title: "ช่างมืออาชีพ",
+    text: "ทีมงานมีประสบการณ์และเชี่ยวชาญ",
+    icon: "i-lucide-users",
+  },
+  {
+    title: "ราคาชัดเจน",
+    text: "ไม่มีค่าใช้จ่ายแอบแฝง",
+    icon: "i-lucide-badge-dollar-sign",
+  },
+  {
+    title: "จองง่ายผ่านมือถือ",
+    text: "ใช้งานง่ายทั้งมือถือและคอมพิวเตอร์",
+    icon: "i-lucide-smartphone",
+  },
 ];
 </script>
 
@@ -101,8 +186,12 @@ const reasons = [
   padding: 32px 0;
 }
 
+.section-gallery {
+  margin-top: 48px;
+}
+
 .section-title {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1e3a8a;
   margin: 1rem 0 1.5rem;
@@ -114,7 +203,7 @@ const reasons = [
 }
 
 .hero-section {
-  background-image: url('/images/carwash.jpg');
+  background-image: url("/images/carwash.jpg");
   background-size: cover;
   background-position: center;
   border-radius: 24px;
@@ -232,6 +321,114 @@ const reasons = [
   font-size: 0.9rem;
 }
 
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-image {
+  width: 80vmin;
+  height: 80vmin;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.modal-inner {
+  position: relative;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.section-intro {
+  padding-bottom: 0;
+}
+
+.intro-heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.5rem;
+}
+
+.intro-subtext {
+  color: #475569;
+  font-size: 1rem;
+  max-width: 720px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.article-section {
+  padding: 48px 32px;
+  background-color: #ffffff; /* พื้นหลังขาว */
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08); /* เงานุ่ม */
+  margin-top: 48px;
+  border-left: 6px solid #3b82f6; /* เส้นไฮไลต์ซ้าย */
+  transition: box-shadow 0.3s ease;
+}
+
+.article-section:hover {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+
+
+.article-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin-bottom: 1.8rem;
+  text-align: center;
+}
+
+.article-text {
+  color: #334155;
+  font-size: 1.05rem;
+  line-height: 1.9;
+  max-width: 740px;
+  margin: 0 auto 1.6rem;
+  text-align: justify;
+  text-indent: 1.5rem;
+}
+
+.article-section p.t1 {
+  font-weight: 600;
+  color: #3b82f6;
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 640px) {
+  .modal-image {
+    width: 90vw;
+    height: 90vw;
+  }
+}
 @media (max-width: 768px) {
   .gallery-custom {
     grid-template-columns: 1fr;

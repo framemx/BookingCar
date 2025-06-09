@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2 class="page-title">🗓️ รายการ Slot ทั้งหมด</h2>
+    <h2 class="page-title">📦 รายการ Slot ทั้งหมด</h2>
 
     <div class="action-bar">
       <button class="btn-add" @click="goToSlotManagement">

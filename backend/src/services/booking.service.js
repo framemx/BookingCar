@@ -183,30 +183,50 @@ const deleteBooking = async (id) => {
 };
 
 
-const getBookingsByEmail = async (email) => {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return [];
-
+// ดึง booking ทั้งหมดจาก email
+async function getBookingsByEmail(email) {
   return await prisma.booking.findMany({
-    where: { userId: user.id },
+    where: {
+      user: {
+        email: email,
+      },
+    },
     include: {
-      bookingServices: { include: { service: true } },
-      bookingSlots: { include: { slot: true } },
       user: true,
+      bookingSlots: {
+        include: {
+          slot: true,
+        },
+      },
+      bookingServices: {
+        include: {
+          service: true,
+        },
+      },
     },
   });
 };
 
-const getBookingsByUserId = async (userId) => {
+// ✅ ดึง booking ทั้งหมดตาม userId
+async function getBookingsByUserId(userId) {
   return await prisma.booking.findMany({
     where: { userId },
     include: {
-      bookingServices: { include: { service: true } },
-      bookingSlots: { include: { slot: true } },
       user: true,
+      bookingSlots: {
+        include: {
+          slot: true,
+        },
+      },
+      bookingServices: {
+        include: {
+          service: true,
+        },
+      },
     },
   });
-};
+}
+
 
 
 module.exports = {

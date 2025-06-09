@@ -34,7 +34,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="booking in todayBookings" :key="booking.id" class="table-row">
+          <tr
+            v-for="booking in todayBookings"
+            :key="booking.id"
+            class="table-row"
+          >
             <td>{{ formatDateDisplay(booking.bookingDate) }}</td>
             <td>{{ booking.start }}</td>
             <td>{{ booking.end }}</td>
@@ -47,8 +51,18 @@
               </ul>
             </td>
             <td>
-              <span :class="booking.status.toUpperCase() === 'CONFIRMED' ? 'status-confirmed' : 'status-pending'">
-                {{ booking.status.toUpperCase() === "CONFIRMED" ? "ยืนยันแล้ว" : "รออนุมัติ" }}
+              <span
+                :class="
+                  booking.status.toUpperCase() === 'CONFIRMED'
+                    ? 'status-confirmed'
+                    : 'status-pending'
+                "
+              >
+                {{
+                  booking.status.toUpperCase() === "CONFIRMED"
+                    ? "ยืนยันแล้ว"
+                    : "รออนุมัติ"
+                }}
               </span>
             </td>
           </tr>
@@ -91,17 +105,32 @@
               <td>{{ formatTime(slot.startTime) }}</td>
               <td>{{ formatTime(slot.endTime) }}</td>
               <td>
-                <span :class="slot.status === 'AVAILABLE' ? 'status-available' : 'status-booked'">
+                <span
+                  :class="
+                    slot.status === 'AVAILABLE'
+                      ? 'status-available'
+                      : 'status-booked'
+                  "
+                >
                   {{ slot.status === "AVAILABLE" ? "ว่าง" : "จองแล้ว" }}
                 </span>
               </td>
             </tr>
             <tr v-if="expandedSlotId === slot.id" class="expanded-row">
               <td colspan="4">
-                <div v-for="sub in generateHourlySlotsWithOverlap(slot.startTime, slot.endTime, combinedBookings, slot.id)" :key="sub.label" class="sub-slot centered">
+                <div
+                  v-for="sub in generateHourlySlotsWithOverlap(
+                    slot.startTime,
+                    slot.endTime,
+                    allConfirmedBookings,
+                    slot.id
+                  )"
+                >
                   <div class="sub-slot-content">
                     <div class="time-label">🕒 {{ sub.label }}</div>
-                    <span :class="sub.booked ? 'status-booked' : 'status-available'">
+                    <span
+                      :class="sub.booked ? 'status-booked' : 'status-available'"
+                    >
                       {{ sub.booked ? "จองแล้ว" : "ว่าง" }}
                     </span>
                   </div>
@@ -118,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
@@ -128,12 +157,33 @@ const userName = ref("");
 const userEmail = ref("");
 const slots = ref([]);
 const latestBooking = ref(null);
-const confirmedBookings = ref([]);
-const selectedDate = ref(new Date().toISOString().slice(0, 10));
-const minDate = selectedDate.value;
+const userBookings = ref([]);
+// 🔥 เปลี่ยนจาก static string เป็น computed property
+const selectedDate = ref("");
+const minDate = ref("");
 const expandedSlotId = ref(null);
+const allConfirmedBookings = ref([]);
+
+// 🔥 เพิ่ม interval สำหรับอัพเดตวันที่
+let dateUpdateInterval = null;
 
 definePageMeta({ layout: "user" });
+
+// 🔥 ฟังก์ชันสำหรับได้วันที่ปัจจุบัน
+function getCurrentDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 🔥 ฟังก์ชันอัพเดตวันที่
+function updateCurrentDate() {
+  const currentDate = getCurrentDateString();
+  selectedDate.value = currentDate;
+  minDate.value = currentDate;
+}
 
 function toggleSlotDetail(slotId) {
   expandedSlotId.value = expandedSlotId.value === slotId ? null : slotId;
@@ -163,7 +213,7 @@ function parseTimeRange(booking) {
 }
 
 const combinedBookings = computed(() => {
-  const enriched = [...confirmedBookings.value];
+  const enriched = [...userBookings.value];
   if (
     latestBooking.value &&
     !enriched.find((b) => b.id === latestBooking.value.id)
@@ -273,28 +323,48 @@ async function fetchSlots() {
 }
 
 async function fetchAllBookings() {
-  const res = await fetch("http://localhost:3000/bookings");
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const res = await fetch(
+    `http://localhost:3000/bookings?userEmail=${userData.email}`
+  );
   const data = await res.json();
-  confirmedBookings.value = data.filter((b) => b.status === "confirmed");
+  userBookings.value = data;
 }
 
 async function refreshBookings() {
+  // 🔥 เพิ่มการอัพเดตวันที่เมื่อกดรีเฟรช
+  updateCurrentDate();
   await fetchAllBookings();
   await fetchSlots();
+  await fetchConfirmedBookingsForSlots();
 }
 
 onMounted(async () => {
+  // 🔥 ตั้งค่าวันที่ปัจจุบันเมื่อโหลดหน้า
+  updateCurrentDate();
+  
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
   userName.value = userData.name || "ผู้ใช้";
   userEmail.value = userData.email || "-";
 
   await fetchSlots();
   await fetchAllBookings();
+  await fetchConfirmedBookingsForSlots();
 
   const bookingId = route.query.bookingId;
   if (bookingId) {
     const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
     latestBooking.value = await res.json();
+  }
+
+  // 🔥 ตั้ง interval ให้อัพเดตวันที่ทุกนาที (60,000 มิลลิวินาที)
+  dateUpdateInterval = setInterval(updateCurrentDate, 60000);
+});
+
+// 🔥 เพิ่ม onUnmounted เพื่อเคลียร์ interval
+onUnmounted(() => {
+  if (dateUpdateInterval) {
+    clearInterval(dateUpdateInterval);
   }
 });
 
@@ -305,14 +375,14 @@ watch(
     if (bookingId) {
       const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
       latestBooking.value = await res.json();
-      await fetchAllBookings(); // Refresh bookings when new booking is added
+      await fetchAllBookings();
     }
   }
 );
 
-// เพิ่มใน <script setup>
+// 🔥 อัพเดต todayBookings ให้ใช้วันที่ปัจจุบันจริงๆ
 const todayBookings = computed(() => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getCurrentDateString(); // ใช้ฟังก์ชันที่ได้วันที่ปัจจุบันจริงๆ
   return combinedBookings.value.filter(
     (b) => b.bookingDate.slice(0, 10) === today
   );
@@ -320,6 +390,12 @@ const todayBookings = computed(() => {
 
 function goToHistory() {
   router.push("/user/history");
+}
+
+async function fetchConfirmedBookingsForSlots() {
+  const res = await fetch("http://localhost:3000/bookings");
+  const data = await res.json();
+  allConfirmedBookings.value = data.filter((b) => b.status === "confirmed");
 }
 </script>
 
@@ -407,7 +483,7 @@ function goToHistory() {
 
 .date-picker-wrapper {
   position: relative;
-  width: 160px; /* ปรับให้แคบลง */
+  width: 160px;
 }
 
 .date-label {
@@ -451,15 +527,14 @@ function goToHistory() {
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 9999px;
-  border: 1px solid #2563eb; /* เปลี่ยนจาก #cbd5e1 -> #2563eb เพื่อให้ชัดขึ้น */
+  border: 1px solid #2563eb;
   background-color: #ffffff;
   color: #1e293b;
   width: 260px;
   cursor: pointer;
-  box-shadow: 0 0 0px 1px #bfdbfe; /* เพิ่มเงาฟ้าอ่อนรอบ input ให้เด่น */
+  box-shadow: 0 0 0px 1px #bfdbfe;
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
-
 
 .date-input:focus {
   border-color: #1e40af;
@@ -468,9 +543,9 @@ function goToHistory() {
   outline: none;
 }
 
-
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%) hue-rotate(209deg) brightness(90%) contrast(100%);
+  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%)
+    hue-rotate(209deg) brightness(90%) contrast(100%);
   cursor: pointer;
   height: 14px;
   width: 14px;
@@ -563,9 +638,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .expanded-row td {
-  padding: 0;
-  background-color: #f8fafc;
-  padding-top: 12px;
+padding: 1rem 0 0.5rem;
+background-color: #f8fafc;
 }
 
 .sub-slot {
@@ -578,28 +652,43 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .sub-slot-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 320px;
-  padding: 0.8rem 1rem;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+display: flex;
+justify-content: space-between;
+align-items: center;
+width: 100%;
+max-width: 440px;
+margin: 0 auto;
+padding: 0.75rem 1.25rem;
+background: #ffffff;
+border-radius: 16px;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+margin-bottom: 16px;
+transition: all 0.3s ease;
+}
+
+.status-available,
+.status-booked {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 80px;
+height: 32px;
+font-size: 0.85rem;
+font-weight: 600;
+border-radius: 9999px;
+padding: 0.4rem 1rem;
 }
 
 .sub-slot-content:hover {
-  background: #e0f2fe;
+background: #eff6ff;
+transform: translateY(-2px);
+box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .time-label {
-  font-weight: 500;
-  font-size: 0.85rem;
-  color: #334155;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
+font-weight: 500;
+font-size: 0.95rem;
+white-space: nowrap;
 }
 
 .date-select-bar {
@@ -612,8 +701,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-top: 1.6rem;
 }
 
-/* ประวัติ */
-/* เพิ่มใน .action-bar */
 .history-button {
   font-family: "Kanit", sans-serif;
   font-weight: 600;
@@ -631,5 +718,4 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .history-button:hover {
   background: #d97706;
 }
-
 </style>
