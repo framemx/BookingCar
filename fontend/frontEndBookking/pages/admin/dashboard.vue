@@ -7,7 +7,13 @@
         <label class="date-label" for="filter-date">
           <span class="calendar-icon">📅</span> เลือกวันที่:
         </label>
-        <input type="date" id="filter-date" v-model="selectedDate" @change="filterBookings" class="date-input" />
+        <input
+          type="date"
+          id="filter-date"
+          v-model="selectedDate"
+          @change="filterBookings"
+          class="date-input"
+        />
       </div>
 
       <div class="table-wrapper">
@@ -35,7 +41,7 @@
             >
               <td>{{ booking.id }}</td>
               <td>{{ booking.customerName }}</td>
-              <td>{{ new Date(booking.date).toLocaleDateString('th-TH') }}</td>
+              <td>{{ new Date(booking.date).toLocaleDateString("th-TH") }}</td>
               <td class="center">{{ booking.slotName }}</td>
               <td>{{ booking.startTime }}</td>
               <td>{{ booking.endTime }}</td>
@@ -51,16 +57,33 @@
                   >
                     {{ displayStatus(booking.editingStatus) }}
                   </div>
-                  <button class="delete-btn" @click.stop="deleteBooking(booking.id)">🗑️</button>
+                  <button
+                    class="delete-btn"
+                    @click.stop="deleteBooking(booking.id)"
+                  >
+                    🗑️
+                  </button>
                   <ul v-if="openDropdown === booking.id" class="dropdown-menu">
-                    <li @click.stop="selectStatus(booking, 'pending')" class="dropdown-item">🕓 รออนุมัติ</li>
-                    <li @click.stop="selectStatus(booking, 'confirmed')" class="dropdown-item">✅ ยืนยันแล้ว</li>
+                    <li
+                      @click.stop="selectStatus(booking, 'pending')"
+                      class="dropdown-item"
+                    >
+                      🕓 รออนุมัติ
+                    </li>
+                    <li
+                      @click.stop="selectStatus(booking, 'confirmed')"
+                      class="dropdown-item"
+                    >
+                      ✅ ยืนยันแล้ว
+                    </li>
                   </ul>
                 </div>
               </td>
             </tr>
             <tr v-if="filteredBookings.length === 0">
-              <td colspan="10" class="no-bookings">ไม่มีรายการจองในวันที่เลือก</td>
+              <td colspan="10" class="no-bookings">
+                ไม่มีรายการจองในวันที่เลือก
+              </td>
             </tr>
           </tbody>
         </table>
@@ -70,16 +93,26 @@
         <div class="popup-content">
           <span class="popup-icon">✅</span>
           <p class="popup-message">อัปเดตสถานะสำเร็จแล้ว</p>
-          <button class="popup-close-btn" @click="showPopup = false">ปิด</button>
+          <button class="popup-close-btn" @click="showPopup = false">
+            ปิด
+          </button>
         </div>
       </div>
 
       <teleport to="body">
-        <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+        <div
+          v-if="showDetailModal"
+          class="modal-overlay"
+          @click.self="closeDetailModal"
+        >
           <div class="modal-content">
             <h3 class="modal-title">📋 รายละเอียดการจอง</h3>
             <div class="detail-grid">
-              <div class="detail-item" v-for="(value, label) in bookingDetailMap" :key="label">
+              <div
+                class="detail-item"
+                v-for="(value, label) in bookingDetailMap"
+                :key="label"
+              >
                 <span class="detail-line">
                   <span class="detail-label">📌 {{ label }}:</span>
                   <span class="detail-value">{{ value }}</span>
@@ -95,13 +128,23 @@
                   class="service-item"
                 >
                   <span class="service-name">🔧 {{ service.sName }}</span>
-                  <span class="service-details">({{ service.durationMinutes }} นาที, {{ service.price }} ฿)</span>
+                  <span class="service-details"
+                    >({{ service.durationMinutes }} นาที,
+                    {{ service.price }} ฿)</span
+                  >
                 </li>
-                <li v-if="!selectedBooking?.services?.length" class="no-services">ไม่มีบริการ</li>
+                <li
+                  v-if="!selectedBooking?.services?.length"
+                  class="no-services"
+                >
+                  ไม่มีบริการ
+                </li>
               </ul>
             </div>
             <div class="modal-footer">
-              <button class="modal-close-btn" @click="closeDetailModal">ปิด</button>
+              <button class="modal-close-btn" @click="closeDetailModal">
+                ปิด
+              </button>
             </div>
           </div>
         </div>
@@ -147,16 +190,16 @@ const selectedBooking = ref<Booking | null>(null);
 const bookingDetailMap = computed(() => {
   if (!selectedBooking.value) return {};
   return {
-    "รหัส": selectedBooking.value.id,
-    "ชื่อลูกค้า": selectedBooking.value.customerName,
-    "วันที่จอง": new Date(selectedBooking.value.date).toLocaleDateString("th-TH"),
-    "ช่องบริการ": selectedBooking.value.slotName,
-    "เวลาเริ่ม": selectedBooking.value.startTime,
-    "เวลาสิ้นสุด": selectedBooking.value.endTime,
-    "ระยะเวลา": `${selectedBooking.value.duration} นาที`,
-    "ราคารวม": `${selectedBooking.value.totalPrice} ฿`,
-    "จำนวนบริการ": selectedBooking.value.serviceCount,
-    "สถานะ": displayStatus(selectedBooking.value.editingStatus)
+    รหัส: selectedBooking.value.id,
+    ชื่อลูกค้า: selectedBooking.value.customerName,
+    วันที่จอง: new Date(selectedBooking.value.date).toLocaleDateString("th-TH"),
+    ช่องบริการ: selectedBooking.value.slotName,
+    เวลาเริ่ม: selectedBooking.value.startTime,
+    เวลาสิ้นสุด: selectedBooking.value.endTime,
+    ระยะเวลา: `${selectedBooking.value.duration} นาที`,
+    ราคารวม: `${selectedBooking.value.totalPrice} ฿`,
+    จำนวนบริการ: selectedBooking.value.serviceCount,
+    สถานะ: displayStatus(selectedBooking.value.editingStatus),
   };
 });
 
@@ -165,16 +208,26 @@ function toggleDropdown(id: number) {
 }
 
 function displayStatus(status: string) {
-  return status === "pending" ? "รออนุมัติ" : status === "confirmed" ? "ยืนยันแล้ว" : "รอยืนยัน";
+  return status === "pending"
+    ? "รออนุมัติ"
+    : status === "confirmed"
+    ? "ยืนยันแล้ว"
+    : "รอยืนยัน";
 }
 
 function statusColor(status: string) {
-  return status === "pending" ? "status-pending" : status === "confirmed" ? "status-confirmed" : "status-pending";
+  return status === "pending"
+    ? "status-pending"
+    : status === "confirmed"
+    ? "status-confirmed"
+    : "status-pending";
 }
 
 async function deleteBooking(id: number) {
   if (!confirm("คุณแน่ใจว่าต้องลบการจองนี้หรือไม่?")) return;
-  const res = await fetch(`http://localhost:3000/bookings/${id}`, { method: "DELETE" });
+  const res = await fetch(`http://localhost:3000/bookings/${id}`, {
+    method: "DELETE",
+  });
   if (!res.ok) return alert("ลบไม่สำเร็จ");
   bookings.value = bookings.value.filter((b) => b.id !== id);
   alert("ลบการจองแล้ว");
@@ -191,7 +244,7 @@ async function updateBookingStatus(id: number, status: string) {
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status }),
   });
   if (res.ok) {
     showPopup.value = true;
@@ -215,31 +268,64 @@ function closeDetailModal() {
 function mapBooking(raw: any): Booking {
   const slots = raw.bookingSlots || [];
   const services = raw.bookingServices || [];
-  const minStart = slots.length ? new Date(Math.min(...slots.map((s: any) => new Date(s.startTime).getTime()))) : null;
-  const totalDuration = services.reduce((sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0), 0);
-  const totalPrice = services.reduce((sum: number, bs: any) => sum + (bs.service?.price || 0), 0);
-  const calculatedEnd = minStart ? new Date(minStart.getTime() + totalDuration * 60000) : null;
+  const minStart = slots.length
+    ? new Date(
+        Math.min(...slots.map((s: any) => new Date(s.startTime).getTime()))
+      )
+    : null;
+  const totalDuration = services.reduce(
+    (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
+    0
+  );
+  const totalPrice = services.reduce(
+    (sum: number, bs: any) => sum + (bs.service?.price || 0),
+    0
+  );
+  const calculatedEnd = minStart
+    ? new Date(minStart.getTime() + totalDuration * 60000)
+    : null;
 
   return {
     id: raw.id,
     customerName: raw.user?.uName || "ไม่ระบุชื่อ",
     date: raw.bookingDate,
-    startTime: minStart?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
-    endTime: calculatedEnd?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
+    startTime:
+      minStart?.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) || "-",
+    endTime:
+      calculatedEnd?.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) || "-",
     duration: totalDuration,
     totalPrice,
     serviceCount: services.length,
     slotName: slots[0]?.slot?.slotName || "-",
     status: raw.status,
     editingStatus: raw.status ?? "",
-    services: services.map((bs: any) => bs.service || {})
+    services: services.map((bs: any) => bs.service || {}),
   };
 }
 
 async function fetchBookings() {
-  const res = await fetch("http://localhost:3000/bookings");
+  const res = await fetch("http://localhost:3000/bookings", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    },
+  });
   const data = await res.json();
-  bookings.value = data.map(mapBooking);
+  const bookingList = Array.isArray(data) ? data : data.data; // ใช้ .data ถ้ามี
+
+  if (!Array.isArray(bookingList)) {
+    throw new Error("ข้อมูล booking ไม่ถูกต้อง");
+  }
+
+  bookings.value = bookingList.map(mapBooking); // ❗ แก้ตรงนี้
+
+  console.log("Booking response:", data);
 }
 
 function filterBookings() {}
@@ -256,7 +342,7 @@ onMounted(fetchBookings);
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");
 
 .page-container {
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
   background-color: #f8fafc;
   color: #1e293b;
   min-height: 100vh;
@@ -312,7 +398,8 @@ onMounted(fetchBookings);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%) hue-rotate(209deg) brightness(90%) contrast(100%);
+  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%)
+    hue-rotate(209deg) brightness(90%) contrast(100%);
   cursor: pointer;
   height: 14px;
   width: 14px;
@@ -440,7 +527,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
   animation: fadeIn 0.3s ease;
   color: #1e293b;
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
 }
 
 .modal-title {
@@ -459,7 +546,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-} 
+}
 
 .detail-grid {
   display: grid;

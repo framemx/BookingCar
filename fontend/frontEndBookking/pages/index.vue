@@ -5,7 +5,8 @@
       <div class="overlay">
         <div class="brand-content">
           <h1><span>BOOKING</span> <strong>CAR</strong></h1>
-          <p>ยินดีต้อนรับสู่บริการดูแลรถของคุณแบบมืออาชีพ<br />
+          <p>
+            ยินดีต้อนรับสู่บริการดูแลรถของคุณแบบมืออาชีพ<br />
             จองง่าย สะดวก และพร้อมดูแลรถของคุณเสมอ
           </p>
           <p class="price">เริ่มต้นเพียง ฿150</p>
@@ -23,13 +24,27 @@
 
         <form @submit.prevent="handleLogin">
           <label for="email">อีเมล</label>
-          <input type="email" id="email" v-model="email" placeholder="you@example.com" required />
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            placeholder="you@example.com"
+            required
+          />
 
           <label for="password">รหัสผ่าน</label>
-          <input type="password" id="password" v-model="password" placeholder="••••••••" required />
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            placeholder="••••••••"
+            required
+          />
 
           <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
-          <button type="button" class="btn-secondary" @click="goToRegister">สร้างบัญชี</button>
+          <button type="button" class="btn-secondary" @click="goToRegister">
+            สร้างบัญชี
+          </button>
 
           <p v-if="error" class="error-msg">{{ error }}</p>
         </form>
@@ -39,60 +54,66 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 
-const logoUrl = '/images/logo.jpg'
+const logoUrl = "/images/logo.jpg";
 
-const email = ref('')
-const password = ref('')
-const error = ref('')
-const glowX = ref(0)
-const glowY = ref(0)
-const router = useRouter()
+const email = ref("");
+const password = ref("");
+const error = ref("");
+const glowX = ref(0);
+const glowY = ref(0);
+const router = useRouter();
 
 function handleMouseMove(e: MouseEvent) {
-  glowX.value = e.clientX
-  glowY.value = e.clientY
+  glowX.value = e.clientX;
+  glowY.value = e.clientY;
 }
 
 const glowStyle = computed(() => ({
   left: `${glowX.value - 150}px`,
   top: `${glowY.value - 150}px`,
-}))
+}));
 
 async function handleLogin() {
   try {
-    const res = await fetch('http://localhost:3000/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("http://localhost:3000/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),
-    })
+    });
 
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || 'Login failed')
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Login failed");
 
-    localStorage.setItem('token', data.data.token)
-    localStorage.setItem('userData', JSON.stringify({
-      id: data.data.id,
-      uName: data.data.uName,
-      email: data.data.email,
-      role: data.data.role,
-    }))
+    // บันทึกโทเคนและข้อมูลผู้ใช้
+    localStorage.setItem("authToken", data.data.token);
+    localStorage.setItem(
+      "userData",
+      JSON.stringify({
+        id: data.data.id,
+        name: data.data.uName,
+        email: data.data.email,
+        phone: data.data.phone || "",
+        profilePicture: data.data.profilePicture || "👤",
+        role: data.data.role,
+      })
+    );
 
-    if (data.data.role === 'ADMIN') {
-      router.push('/admin/dashboard')
+    // เปลี่ยนเส้นทางตามบทบาท
+    if (data.data.role === "ADMIN") {
+      router.push("/admin/dashboard");
     } else {
-      router.push('/user/home')
+      router.push("/user/home"); // เปลี่ยนไปหน้าแรกของผู้ใช้ทั่วไป
     }
-
   } catch (err: any) {
-    error.value = err.message
+    error.value = err.message;
   }
 }
 
 function goToRegister() {
-  router.push('/register')
+  router.push("/register");
 }
 </script>
 
@@ -102,12 +123,12 @@ function goToRegister() {
 .login-container {
   display: flex;
   height: 100vh;
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
   overflow: hidden;
 }
 .login-left {
   flex: 1;
-  background: url('/images/carsport.jpg') center/cover no-repeat;
+  background: url("/images/carsport.jpg") center/cover no-repeat;
   position: relative;
 }
 .overlay {
@@ -146,9 +167,6 @@ function goToRegister() {
   width: fit-content;
 }
 
-
-
-
 .brand-content:hover {
   transform: translateY(-4px);
   transition: transform 0.3s ease;
@@ -157,7 +175,11 @@ function goToRegister() {
 
 .login-right {
   flex: 1;
-  background: linear-gradient(to bottom right, #f1f5f9, rgba(211, 234, 255, 0.35));
+  background: linear-gradient(
+    to bottom right,
+    #f1f5f9,
+    rgba(211, 234, 255, 0.35)
+  );
   position: relative;
   display: flex;
   align-items: center;
@@ -172,7 +194,8 @@ function goToRegister() {
   border: 2px solid rgba(37, 99, 235, 0.35);
   border-radius: 50%;
   pointer-events: none;
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3), 0 0 60px rgba(147, 197, 253, 0.25);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3),
+    0 0 60px rgba(147, 197, 253, 0.25);
   filter: blur(2px);
   transition: top 0.15s ease, left 0.15s ease;
   mix-blend-mode: screen;
@@ -223,7 +246,7 @@ input {
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   font-size: 1rem;
-  color: #111827;  /* ✅ เพิ่มสีข้อความที่กรอก */
+  color: #111827; /* ✅ เพิ่มสีข้อความที่กรอก */
   transition: border 0.3s ease, box-shadow 0.3s ease;
 }
 input:focus {

@@ -112,6 +112,25 @@ definePageMeta({ layout: "user" });
 
 const activeImage = ref<string | null>(null);
 
+// ลบ reactive state ที่ไม่จำเป็นออก
+// เพราะไม่ได้ใช้งานใน template จริง ๆ
+
+function getAuthHeaders() {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  
+  // ตรวจสอบว่าอยู่ใน client-side หรือไม่ก่อนเข้าถึง localStorage
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  
+  return headers;
+}
+
 function showImagePopup(imageSrc: string) {
   activeImage.value = imageSrc;
 }
@@ -382,8 +401,6 @@ const reasons = [
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
-
-
 .article-title {
   font-size: 1.7rem;
   font-weight: 800;
@@ -436,5 +453,16 @@ const reasons = [
   .gallery-item img {
     height: 160px;
   }
+}
+
+.close-button {
+  position: absolute;
+  top: -40px;
+  right: -10px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: white;
 }
 </style>

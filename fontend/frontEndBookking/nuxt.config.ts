@@ -16,4 +16,9 @@ export default defineNuxtConfig({
   devServer: {
     port: 4000,
   },
+
+  // เพิ่มการกำหนดค่า router และ middleware
+  router: {
+    middleware: 'auth', // ใช้ middleware ชื่อ 'auth' สำหรับทุกเส้นทาง
+  },
 });

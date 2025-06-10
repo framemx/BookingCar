@@ -168,6 +168,15 @@
 definePageMeta({ layout: "admin" });
 import { ref, reactive, onMounted } from "vue";
 
+function getAuthHeaders() {
+  const token =
+    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
 interface Service {
   id: number;
   sName: string;
@@ -199,7 +208,7 @@ function closeAddModal() {
 async function submitNewService() {
   const res = await fetch("http://localhost:3000/services", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(), // ✅
     body: JSON.stringify(newService),
   });
   if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ");
@@ -262,10 +271,20 @@ async function deleteService() {
 }
 
 async function fetchServices() {
-  const res = await fetch("http://localhost:3000/services");
+  const res = await fetch("http://localhost:3000/services", {
+    headers: getAuthHeaders(), // ✅ เพิ่มตรงนี้
+  });
+
+  if (res.status === 401) {
+    alert("กรุณาเข้าสู่ระบบใหม่");
+    navigateTo("/login"); // หรือจะ reload ก็ได้
+    return;
+  }
+
   const data = await res.json();
   services.value = data.data || [];
 }
+
 onMounted(fetchServices);
 </script>
 
@@ -358,7 +377,7 @@ onMounted(fetchServices);
   font-weight: normal;
   cursor: pointer;
   min-width: unset; /* ยกเลิกบังคับความกว้าง */
-  width: auto;      /* ให้ขนาดตามเนื้อข้อความ */
+  width: auto; /* ให้ขนาดตามเนื้อข้อความ */
   white-space: nowrap;
 }
 

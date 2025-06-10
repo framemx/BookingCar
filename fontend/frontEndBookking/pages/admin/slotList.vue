@@ -15,16 +15,27 @@
       </label>
       <div class="date-picker-wrapper">
         <i class="i-lucide-calendar"></i>
-        <input type="date" id="filterDate" v-model="selectedDate" class="custom-date-input" />
+        <input
+          type="date"
+          id="filterDate"
+          v-model="selectedDate"
+          class="custom-date-input"
+        />
       </div>
       <button v-if="selectedDate" @click="clearDateFilter">ล้างตัวกรอง</button>
     </div>
 
     <div v-if="loading" class="loading">กำลังโหลดข้อมูล...</div>
-    <div v-else-if="filteredSlots.length === 0" class="empty">ไม่มีข้อมูล Slot สำหรับวันที่เลือก</div>
+    <div v-else-if="filteredSlots.length === 0" class="empty">
+      ไม่มีข้อมูล Slot สำหรับวันที่เลือก
+    </div>
 
     <div v-else class="slot-list">
-      <div v-for="(slot, index) in filteredSlots" :key="slot.id" class="slot-item">
+      <div
+        v-for="(slot, index) in filteredSlots"
+        :key="slot.id"
+        class="slot-item"
+      >
         <p><strong>ชื่อ Slot:</strong> {{ slot.slotName || "ไม่มีชื่อ" }}</p>
         <p><strong>วันที่:</strong> {{ slot.date || "ไม่มีวันที่" }}</p>
         <p><strong>เวลาเริ่ม:</strong> {{ formatTime(slot.startTime) }}</p>
@@ -48,10 +59,34 @@
       <form @submit.prevent="saveEdit">
         <h3>แก้ไขข้อมูล Slot</h3>
 
-        <label>ชื่อ Slot:<input type="text" v-model="editSlotData.slotName" required class="form-input" /></label>
-        <label>วันที่:<input type="date" v-model="editSlotData.date" required class="form-input" /></label>
-        <label>เวลาเริ่ม:<input type="time" v-model="editSlotData.startTime" required class="form-input" /></label>
-        <label>เวลาสิ้นสุด:<input type="time" v-model="editSlotData.endTime" required class="form-input" /></label>
+        <label
+          >ชื่อ Slot:<input
+            type="text"
+            v-model="editSlotData.slotName"
+            required
+            class="form-input"
+        /></label>
+        <label
+          >วันที่:<input
+            type="date"
+            v-model="editSlotData.date"
+            required
+            class="form-input"
+        /></label>
+        <label
+          >เวลาเริ่ม:<input
+            type="time"
+            v-model="editSlotData.startTime"
+            required
+            class="form-input"
+        /></label>
+        <label
+          >เวลาสิ้นสุด:<input
+            type="time"
+            v-model="editSlotData.endTime"
+            required
+            class="form-input"
+        /></label>
         <label>
           สถานะ:
           <select v-model="editSlotData.status" required class="form-input">
@@ -62,7 +97,9 @@
 
         <div class="dialog-buttons">
           <button type="submit" class="btn-save">บันทึก</button>
-          <button type="button" class="btn-cancel" @click="closeEditDialog">ยกเลิก</button>
+          <button type="button" class="btn-cancel" @click="closeEditDialog">
+            ยกเลิก
+          </button>
         </div>
       </form>
     </dialog>
@@ -89,6 +126,15 @@ const editSlotData = ref({
   status: "AVAILABLE",
 });
 
+function getAuthHeaders() {
+  const token =
+    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
 const selectedDate = ref("");
 const filteredSlots = computed(() => {
   if (!selectedDate.value) return slots.value;
@@ -111,7 +157,8 @@ function closeEditDialog() {
 async function saveEdit() {
   try {
     const { date, startTime, endTime } = editSlotData.value;
-    if (!date || !startTime || !endTime) throw new Error("กรุณากรอกวันที่และเวลาให้ครบ");
+    if (!date || !startTime || !endTime)
+      throw new Error("กรุณากรอกวันที่และเวลาให้ครบ");
 
     const start = new Date(`1970-01-01T${startTime}:00`);
     const end = new Date(`1970-01-01T${endTime}:00`);
@@ -119,13 +166,17 @@ async function saveEdit() {
 
     const payload = { ...editSlotData.value };
 
-    const res = await fetch(`http://localhost:3000/slots/${editSlotData.value.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `http://localhost:3000/slots/${editSlotData.value.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(), // ✅
+        body: JSON.stringify(payload),
+      }
+    );
 
-    if (!res.ok) throw new Error((await res.json()).error || "แก้ไข Slot ไม่สำเร็จ");
+    if (!res.ok)
+      throw new Error((await res.json()).error || "แก้ไข Slot ไม่สำเร็จ");
 
     const index = slots.value.findIndex((s) => s.id === payload.id);
     if (index !== -1) slots.value[index] = payload;
@@ -142,8 +193,11 @@ async function deleteSlot(id) {
   try {
     const res = await fetch(`http://localhost:3000/slots/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(), // ✅
     });
-    if (!res.ok) throw new Error((await res.json()).error || "ลบ Slot ไม่สำเร็จ");
+
+    if (!res.ok)
+      throw new Error((await res.json()).error || "ลบ Slot ไม่สำเร็จ");
     slots.value = slots.value.filter((s) => s.id !== id);
     alert("ลบ Slot เรียบร้อยแล้ว");
   } catch (err) {
@@ -154,8 +208,11 @@ async function deleteSlot(id) {
 async function fetchSlots() {
   loading.value = true;
   try {
-    const res = await fetch("http://localhost:3000/slots");
-    if (!res.ok) throw new Error((await res.json()).error || "โหลดข้อมูลไม่สำเร็จ");
+    const res = await fetch("http://localhost:3000/slots", {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok)
+      throw new Error((await res.json()).error || "โหลดข้อมูลไม่สำเร็จ");
     slots.value = await res.json();
   } catch (err) {
     alert(err.message);
@@ -166,9 +223,15 @@ async function fetchSlots() {
 
 function formatTime(timeString) {
   if (!timeString) return "ไม่มีเวลา";
-  if (/^\d{4}$/.test(timeString)) timeString = timeString.slice(0, 2) + ":" + timeString.slice(2);
-  return new Date(`1970-01-01T${timeString.length === 5 ? timeString : timeString + ':00'}`)
-    .toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
+  if (/^\d{4}$/.test(timeString))
+    timeString = timeString.slice(0, 2) + ":" + timeString.slice(2);
+  return new Date(
+    `1970-01-01T${timeString.length === 5 ? timeString : timeString + ":00"}`
+  ).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function clearDateFilter() {
@@ -179,7 +242,7 @@ onMounted(fetchSlots);
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");
 
 .container {
   max-width: 960px;
@@ -188,7 +251,7 @@ onMounted(fetchSlots);
   background: #fff;
   border-radius: 24px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
   color: #1e293b;
 }
 

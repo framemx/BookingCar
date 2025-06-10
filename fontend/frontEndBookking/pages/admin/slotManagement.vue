@@ -109,6 +109,15 @@ definePageMeta({ layout: "admin" });
 const slotCount = ref(1);
 const slots = ref([]);
 
+function getAuthHeaders() {
+  const token =
+    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
 function getTodayDateString() {
   const today = new Date();
   const year = today.getFullYear();
@@ -178,7 +187,7 @@ async function saveSlots() {
     try {
       const res = await fetch("http://localhost:3000/slots", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ แนบ token ไป
         body: JSON.stringify(payload),
       });
 
@@ -226,7 +235,7 @@ async function saveSlots() {
   gap: 1rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  justify-content: space-between
+  justify-content: space-between;
 }
 
 .input-control-wrapper {
@@ -280,7 +289,6 @@ async function saveSlots() {
   transform: scale(1.1);
 }
 
-
 .counter-btn:disabled {
   background-color: #cbd5e1;
   cursor: not-allowed;
@@ -291,7 +299,6 @@ async function saveSlots() {
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
-
 
 .slot-group {
   background: #f9fafb;
@@ -360,7 +367,6 @@ label {
   border-radius: 9999px;
   border: none;
   cursor: pointer;
-  
 }
 
 .btn-add:hover {

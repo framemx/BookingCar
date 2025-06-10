@@ -26,6 +26,7 @@
         <thead>
           <tr>
             <th>วันที่</th>
+            <th>ช่องบริการ</th>
             <th>เวลาเริ่ม</th>
             <th>เวลาสิ้นสุด</th>
             <th>ระยะเวลา</th>
@@ -40,9 +41,10 @@
             class="table-row"
           >
             <td>{{ formatDateDisplay(booking.bookingDate) }}</td>
+            <td>{{ booking.bookingSlots[0].slot.slotName }}</td>
             <td>{{ booking.start }}</td>
             <td>{{ booking.end }}</td>
-            <td>{{ booking.duration }} นาที</td>
+            <td>{{ formatDuration(booking.duration) }}</td>
             <td>
               <ul class="service-list">
                 <li v-for="bs in booking.bookingServices" :key="bs.service.id">
@@ -71,7 +73,6 @@
 
       <p v-else class="no-bookings">ไม่มีการจองสำหรับวันนี้</p>
 
-      <!-- Date Picker -->
       <div class="date-select-bar">
         <label class="date-label" for="datePicker">
           <span class="calendar-icon"></span> เลือกวันที่
@@ -125,6 +126,7 @@
                     allConfirmedBookings,
                     slot.id
                   )"
+                  :key="sub.label"
                 >
                   <div class="sub-slot-content">
                     <div class="time-label">🕒 {{ sub.label }}</div>
@@ -158,27 +160,23 @@ const userEmail = ref("");
 const slots = ref([]);
 const latestBooking = ref(null);
 const userBookings = ref([]);
-// 🔥 เปลี่ยนจาก static string เป็น computed property
 const selectedDate = ref("");
 const minDate = ref("");
 const expandedSlotId = ref(null);
 const allConfirmedBookings = ref([]);
 
-// 🔥 เพิ่ม interval สำหรับอัพเดตวันที่
 let dateUpdateInterval = null;
 
 definePageMeta({ layout: "user" });
 
-// 🔥 ฟังก์ชันสำหรับได้วันที่ปัจจุบัน
 function getCurrentDateString() {
   const today = new Date();
   const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-// 🔥 ฟังก์ชันอัพเดตวันที่
 function updateCurrentDate() {
   const currentDate = getCurrentDateString();
   selectedDate.value = currentDate;
@@ -312,27 +310,68 @@ function getLocalDateString(date) {
 }
 
 async function fetchSlots() {
-  const res = await fetch("http://localhost:3000/slots");
-  const data = await res.json();
-  slots.value = data.map((slot) => ({
-    ...slot,
-    date: getLocalDateString(new Date(slot.date)),
-    startTime: new Date(`${slot.date}T${slot.startTime}:00`),
-    endTime: new Date(`${slot.date}T${slot.endTime}:00`),
-  }));
+  try {
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const authToken = localStorage.getItem("authToken");
+    const token = userData.token || authToken;
+    if (!token) {
+      router.push("/");
+      return;
+    }
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+    const res = await fetch("http://localhost:3000/bookings", { headers }); // เปลี่ยนจาก /slots เป็น /bookings
+    if (!res.ok) {
+      const errorData = await res.json();
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userData");
+        router.push("/");
+        return;
+      }
+      throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status} - ${errorData.message || ''}`);
+    }
+    const data = await res.json();
+    slots.value = Array.isArray(data) ? data.map((slot) => ({
+      ...slot,
+      date: getLocalDateString(new Date(slot.date)),
+      startTime: new Date(`${slot.date}T${slot.startTime}:00`),
+      endTime: new Date(`${slot.date}T${slot.endTime}:00`),
+    })) : [];
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการดึง slots:", error);
+    slots.value = [];
+  }
 }
 
 async function fetchAllBookings() {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-  const res = await fetch(
-    `http://localhost:3000/bookings?userEmail=${userData.email}`
-  );
-  const data = await res.json();
-  userBookings.value = data;
+  try {
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const token = userData.token;
+    if (!token) {
+      router.push("/"); // เปลี่ยนไปหน้าโฮม (index.vue ซึ่งเป็นหน้า Login)
+      return;
+    }
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const res = await fetch(
+      `http://localhost:3000/bookings?userEmail=${userData.email}`,
+      { headers }
+    );
+    if (!res.ok) throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status}`);
+    const data = await res.json();
+    userBookings.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการดึง bookings:", error);
+    userBookings.value = [];
+  }
 }
 
 async function refreshBookings() {
-  // 🔥 เพิ่มการอัพเดตวันที่เมื่อกดรีเฟรช
   updateCurrentDate();
   await fetchAllBookings();
   await fetchSlots();
@@ -340,10 +379,13 @@ async function refreshBookings() {
 }
 
 onMounted(async () => {
-  // 🔥 ตั้งค่าวันที่ปัจจุบันเมื่อโหลดหน้า
   updateCurrentDate();
-  
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const token = userData.token || localStorage.getItem("authToken"); // ตรวจสอบทั้งสองตำแหน่ง
+  if (!token) {
+    router.push("/");
+    return;
+  }
   userName.value = userData.name || "ผู้ใช้";
   userEmail.value = userData.email || "-";
 
@@ -353,15 +395,22 @@ onMounted(async () => {
 
   const bookingId = route.query.bookingId;
   if (bookingId) {
-    const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
-    latestBooking.value = await res.json();
+    try {
+      const res = await fetch(`http://localhost:3000/bookings/${bookingId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      latestBooking.value = await res.json();
+    } catch (error) {
+      console.error("ข้อผิดพลาดในการดึง booking ล่าสุด:", error);
+      latestBooking.value = null;
+    }
   }
 
-  // 🔥 ตั้ง interval ให้อัพเดตวันที่ทุกนาที (60,000 มิลลิวินาที)
   dateUpdateInterval = setInterval(updateCurrentDate, 60000);
 });
 
-// 🔥 เพิ่ม onUnmounted เพื่อเคลียร์ interval
 onUnmounted(() => {
   if (dateUpdateInterval) {
     clearInterval(dateUpdateInterval);
@@ -373,16 +422,20 @@ watch(
   async () => {
     const bookingId = route.query.bookingId;
     if (bookingId) {
-      const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
-      latestBooking.value = await res.json();
-      await fetchAllBookings();
+      try {
+        const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
+        latestBooking.value = await res.json();
+        await fetchAllBookings();
+      } catch (error) {
+        console.error("Error fetching booking by ID:", error);
+        latestBooking.value = null;
+      }
     }
   }
 );
 
-// 🔥 อัพเดต todayBookings ให้ใช้วันที่ปัจจุบันจริงๆ
 const todayBookings = computed(() => {
-  const today = getCurrentDateString(); // ใช้ฟังก์ชันที่ได้วันที่ปัจจุบันจริงๆ
+  const today = getCurrentDateString();
   return combinedBookings.value.filter(
     (b) => b.bookingDate.slice(0, 10) === today
   );
@@ -393,9 +446,40 @@ function goToHistory() {
 }
 
 async function fetchConfirmedBookingsForSlots() {
-  const res = await fetch("http://localhost:3000/bookings");
-  const data = await res.json();
-  allConfirmedBookings.value = data.filter((b) => b.status === "confirmed");
+  try {
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const token = userData.token;
+    if (!token) {
+      router.push("/"); // เปลี่ยนไปหน้าโฮม (index.vue ซึ่งเป็นหน้า Login)
+      return;
+    }
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const res = await fetch("http://localhost:3000/bookings", { headers });
+    if (!res.ok) throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status}`);
+    const data = await res.json();
+    allConfirmedBookings.value = Array.isArray(data) ? data.filter((b) => b.status === "confirmed") : [];
+  } catch (error) {
+    console.error("ข้อผิดพลาดในการดึง confirmed bookings:", error);
+    allConfirmedBookings.value = [];
+  }
+}
+
+function formatDuration(minutes) {
+  if (minutes < 60) {
+    return `${minutes} นาที`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours} ชม.`;
+  } else {
+    return `${hours} ชม. ${remainingMinutes} นาที`;
+  }
 }
 </script>
 
@@ -451,7 +535,8 @@ async function fetchConfirmedBookingsForSlots() {
 }
 
 .booking-button,
-.refresh-button {
+.refresh-button,
+.history-button {
   font-family: "Kanit", sans-serif;
   font-weight: 600;
   border: none;
@@ -460,6 +545,7 @@ async function fetchConfirmedBookingsForSlots() {
   font-size: 0.85rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
+  margin-left: 0.75rem;
 }
 
 .booking-button {
@@ -470,7 +556,11 @@ async function fetchConfirmedBookingsForSlots() {
 .refresh-button {
   background: #64748b;
   color: #ffffff;
-  margin-left: 0.75rem;
+}
+
+.history-button {
+  background: #f59e0b;
+  color: #ffffff;
 }
 
 .booking-button:hover {
@@ -481,13 +571,22 @@ async function fetchConfirmedBookingsForSlots() {
   background: #475569;
 }
 
-.date-picker-wrapper {
-  position: relative;
-  width: 160px;
+.history-button:hover {
+  background: #d97706;
+}
+
+.date-select-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+  flex-wrap: wrap;
+  margin-top: 1.6rem;
 }
 
 .date-label {
-  font-size: 1 rem;
+  font-size: 1rem;
   font-weight: 500;
   color: #000000;
   display: flex;
@@ -496,36 +595,10 @@ async function fetchConfirmedBookingsForSlots() {
   white-space: nowrap;
 }
 
-.date-label .calendar-icon {
-  font-size: 1.1rem;
-}
-
 .date-input {
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  border-radius: 9999px;
-  border: 1.5px solid #2563eb;
-  background-color: #fff;
-  color: #1e293b;
-  width: 160px;
-  height: 34px;
-  box-shadow: 0 0 0px 1px #bfdbfe;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.calendar-icon {
-  position: absolute;
-  left: 1rem;
-  font-size: 1.25rem;
-  color: #1e3a8a;
-  pointer-events: none;
-}
-
-.date-input {
-  padding: 0.6rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
+  padding: 0.6rem 1rem;
   border-radius: 9999px;
   border: 1px solid #2563eb;
   background-color: #ffffff;
@@ -544,8 +617,7 @@ async function fetchConfirmedBookingsForSlots() {
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%)
-    hue-rotate(209deg) brightness(90%) contrast(100%);
+  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%) hue-rotate(209deg) brightness(90%) contrast(100%);
   cursor: pointer;
   height: 14px;
   width: 14px;
@@ -578,6 +650,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #334155;
   font-size: 0.9rem;
   font-weight: 500;
+  vertical-align: middle;
 }
 
 .slot-table th {
@@ -586,9 +659,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 600;
 }
 
-.slot-table td:nth-child(5) {
+.slot-table td:nth-child(6) {
   text-align: left;
   vertical-align: top;
+  max-width: 200px;
 }
 
 .service-list {
@@ -602,6 +676,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.6;
+  padding: 2px 0;
+  border-left: 3px solid #3b82f6;
+  padding-left: 8px;
+  margin-bottom: 4px;
 }
 
 .status-confirmed,
@@ -638,84 +716,34 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .expanded-row td {
-padding: 1rem 0 0.5rem;
-background-color: #f8fafc;
-}
-
-.sub-slot {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2rem;
-  width: 100%;
-  padding: 0.5rem 0;
+  padding: 1rem 0 0.5rem;
+  background-color: #f8fafc;
 }
 
 .sub-slot-content {
-display: flex;
-justify-content: space-between;
-align-items: center;
-width: 100%;
-max-width: 440px;
-margin: 0 auto;
-padding: 0.75rem 1.25rem;
-background: #ffffff;
-border-radius: 16px;
-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-margin-bottom: 16px;
-transition: all 0.3s ease;
-}
-
-.status-available,
-.status-booked {
-display: inline-flex;
-align-items: center;
-justify-content: center;
-width: 80px;
-height: 32px;
-font-size: 0.85rem;
-font-weight: 600;
-border-radius: 9999px;
-padding: 0.4rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
 }
 
 .sub-slot-content:hover {
-background: #eff6ff;
-transform: translateY(-2px);
-box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .time-label {
-font-weight: 500;
-font-size: 0.95rem;
-white-space: nowrap;
-}
-
-.date-select-bar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.6rem;
-  flex-wrap: wrap;
-  margin-top: 1.6rem;
-}
-
-.history-button {
-  font-family: "Kanit", sans-serif;
-  font-weight: 600;
-  border: none;
-  border-radius: 9999px;
-  padding: 0.4rem 1rem;
-  font-size: 0.85rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-  background: #f59e0b;
-  color: white;
-  margin-left: 0.75rem;
-}
-
-.history-button:hover {
-  background: #d97706;
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
 }
 </style>

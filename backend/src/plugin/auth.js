@@ -1,4 +1,4 @@
-const BoomAuth = require("@hapi/boom");
+const Boom = require("@hapi/boom");
 const { verifyToken } = require("../utils/jwt");
 
 exports.authPlugin = {
@@ -10,30 +10,33 @@ exports.authPlugin = {
         const authorization = request.headers.authorization;
 
         if (!authorization) {
-          throw BoomAuth.unauthorized(null, "Bearer");
+          throw Boom.unauthorized("No token provided", "Bearer");
         }
 
         const [scheme, token] = authorization.split(" ");
         if (scheme !== "Bearer" || !token) {
-          throw BoomAuth.unauthorized("Bad auth format", "Bearer");
+          throw Boom.unauthorized("Bad auth format", "Bearer");
         }
+
         try {
           const credentials = verifyToken(token);
+          // เพิ่มข้อมูล role และสถานะใน credentials
           return h.authenticated({
             credentials: {
               ...credentials,
-              scope: [credentials.role], // ให้ Hapi รู้จัก role เป็น scope
+              scope: [credentials.role], // ใช้ role เป็น scope
+              isAuthenticated: true,    // เพิ่ม flag เพื่อบ่งบอกสถานะ
             },
           });
         } catch (err) {
-          throw BoomAuth.unauthorized("Invalid or expired token", "Bearer");
+          throw Boom.unauthorized("Invalid or expired token", "Bearer", {
+            error: "TokenExpired", // ส่งข้อมูลเพิ่มเติมถ้าต้องการ
+          });
         }
       },
     }));
 
     server.auth.strategy("jwt", "jwt");
-
-    // server.auth.default("jwt");
-    // กำหนดให้ใช้ JWT เป็นค่า default สำหรับทุก route
+    server.auth.default("jwt"); // ใช้ JWT เป็นค่า default สำหรับทุก route
   },
 };
