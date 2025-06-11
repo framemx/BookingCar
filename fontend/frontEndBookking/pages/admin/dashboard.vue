@@ -155,19 +155,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+
+// 🧩 กำหนด layout ที่ใช้กับหน้านี้เป็น layout 'admin'
 definePageMeta({ layout: "admin" });
 
-onMounted(async () => {
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    router.push("/"); // ไปหน้า login
-    return;
-  }
-  await fetchBookings();
-});
-
-
+// 🧱 ประกาศชนิดข้อมูลของบริการ (Service)
+// ใช้สำหรับเก็บข้อมูลแต่ละบริการในรายการจอง เช่น ล้างรถ ขัดเคลือบ ฯลฯ
 interface Service {
   id: number;
   sName: string;
@@ -176,6 +169,8 @@ interface Service {
   durationMinutes: number;
 }
 
+// 🧱 ประกาศชนิดข้อมูลของรายการจอง (Booking)
+// รวมข้อมูลทั้งหมดของแต่ละการจอง เช่น ลูกค้า, วันเวลา, บริการที่เลือก, สถานะ ฯลฯ
 interface Booking {
   id: number;
   customerName: string;
@@ -191,13 +186,21 @@ interface Booking {
   services: Service[];
 }
 
-const bookings = ref<Booking[]>([]);
-const selectedDate = ref<string>("");
-const openDropdown = ref<number | null>(null);
-const showPopup = ref<boolean>(false);
-const showDetailModal = ref<boolean>(false);
-const selectedBooking = ref<Booking | null>(null);
+// 📦 ตัวแปรหลักสำหรับจัดการ UI และข้อมูล
+const bookings = ref<Booking[]>([]); // รายการจองทั้งหมดที่ดึงมาจาก backend
+const selectedDate = ref<string>(""); // วันที่ที่ผู้ใช้เลือกใน input type="date"
+const openDropdown = ref<number | null>(null); // id ของรายการที่เปิด dropdown สถานะอยู่
+const showPopup = ref<boolean>(false); // ใช้ควบคุม popup เมื่อเปลี่ยนสถานะสำเร็จ
+const showDetailModal = ref<boolean>(false); // ใช้ควบคุมการเปิด/ปิด modal รายละเอียด
+const selectedBooking = ref<Booking | null>(null); // ข้อมูลของรายการที่ผู้ใช้คลิกดูรายละเอียด
 
+// 📅 เมื่อผู้ใช้เลือกวัน จะกรองรายการจองเฉพาะวันนั้น
+const filteredBookings = computed(() => {
+  if (!selectedDate.value) return bookings.value;
+  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value));
+});
+
+// 📋 เตรียมข้อมูลรายละเอียดการจอง สำหรับแสดงใน modal แบบ key-value
 const bookingDetailMap = computed(() => {
   if (!selectedBooking.value) return {};
   return {
@@ -214,10 +217,99 @@ const bookingDetailMap = computed(() => {
   };
 });
 
+// 🟢 ฟังก์ชันที่ทำงานทันทีเมื่อโหลดหน้าเสร็จ
+// 1. ตรวจสอบว่า user login แล้วหรือยัง (มี token หรือไม่)
+// 2. ถ้า login แล้วเรียก fetchBookings เพื่อดึงข้อมูลรายการจองทั้งหมดจาก backend
+onMounted(async () => {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+    router.push("/"); // ถ้าไม่มี token ส่งผู้ใช้กลับไปหน้า login
+    return;
+  }
+  await fetchBookings();
+});
+
+// 📡 เรียก API ที่ backend เพื่อนำข้อมูลการจองทั้งหมดมาเก็บไว้ใน bookings
+async function fetchBookings() {
+  const res = await fetch("http://localhost:3000/bookings", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    },
+  });
+
+  const data = await res.json();
+  const bookingList = Array.isArray(data) ? data : data.data;
+
+  if (!Array.isArray(bookingList)) {
+    throw new Error("ข้อมูล booking ไม่ถูกต้อง");
+  }
+
+  bookings.value = bookingList.map(mapBooking); // แปลงข้อมูลด้วย mapBooking เพื่อให้พร้อมใช้กับหน้าจอ
+}
+
+// 🔄 ฟังก์ชัน mapBooking ใช้แปลงข้อมูลดิบจาก backend ให้อยู่ในรูปแบบ Booking ที่ frontend ใช้ได้
+function mapBooking(raw: any): Booking {
+  const slots = raw.bookingSlots || [];
+  const services = raw.bookingServices || [];
+
+  // หาเวลาเริ่มต้นที่น้อยที่สุดจาก slot
+  const minStart = slots.length
+    ? new Date(Math.min(...slots.map((s: any) => new Date(s.startTime).getTime())))
+    : null;
+
+  // คำนวณเวลารวมของบริการทั้งหมด
+  const totalDuration = services.reduce(
+    (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
+    0
+  );
+
+  // คำนวณราคารวมของบริการทั้งหมด
+  const totalPrice = services.reduce(
+    (sum: number, bs: any) => sum + (bs.service?.price || 0),
+    0
+  );
+
+  // คำนวณเวลาสิ้นสุด โดยเอาเวลาเริ่ม + เวลารวม
+  const calculatedEnd = minStart
+    ? new Date(minStart.getTime() + totalDuration * 60000)
+    : null;
+
+  return {
+    id: raw.id,
+    customerName: raw.user?.uName || "ไม่ระบุชื่อ",
+    date: raw.bookingDate,
+    startTime: minStart?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
+    endTime: calculatedEnd?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
+    duration: totalDuration,
+    totalPrice,
+    serviceCount: services.length,
+    slotName: slots[0]?.slot?.slotName || "-",
+    status: raw.status,
+    editingStatus: raw.status ?? "",
+    services: services.map((bs: any) => bs.service || {}),
+  };
+}
+
+// 🪟 เมื่อผู้ใช้คลิกที่แถวของรายการจอง จะเปิด modal รายละเอียดการจอง
+function openDetailModal(booking: Booking) {
+  selectedBooking.value = booking;
+  showDetailModal.value = true;
+}
+
+// ❌ ปิด modal รายละเอียด
+function closeDetailModal() {
+  showDetailModal.value = false;
+  selectedBooking.value = null;
+}
+
+// 🔽 เปิด/ปิด dropdown เปลี่ยนสถานะของการจองแต่ละรายการ
 function toggleDropdown(id: number) {
   openDropdown.value = openDropdown.value === id ? null : id;
 }
 
+// 🔤 แปลงรหัสสถานะเป็นข้อความภาษาไทย
 function displayStatus(status: string) {
   return status === "pending"
     ? "รออนุมัติ"
@@ -226,6 +318,7 @@ function displayStatus(status: string) {
     : "รอยืนยัน";
 }
 
+// 🎨 กำหนด class สีของ badge สถานะ ตามค่าที่ได้
 function statusColor(status: string) {
   return status === "pending"
     ? "status-pending"
@@ -234,8 +327,10 @@ function statusColor(status: string) {
     : "status-pending";
 }
 
+// 🗑️ ลบการจองเมื่อผู้ใช้กดปุ่มถังขยะ โดยส่งคำขอลบไปยัง backend แล้วลบจากรายการ
 async function deleteBooking(id: number) {
   if (!confirm("คุณแน่ใจว่าต้องลบการจองนี้หรือไม่?")) return;
+
   const token = localStorage.getItem("authToken");
   const res = await fetch(`http://localhost:3000/bookings/${id}`, {
     method: "DELETE",
@@ -250,6 +345,8 @@ async function deleteBooking(id: number) {
   alert("ลบการจองแล้ว");
 }
 
+// ✅ ฟังก์ชันเมื่อผู้ใช้เลือกเปลี่ยนสถานะรายการ (รออนุมัติ → ยืนยันแล้ว ฯลฯ)
+// อัปเดตสถานะใน frontend และเรียก updateBookingStatus เพื่ออัปเดต backend
 function selectStatus(booking: Booking, status: string) {
   booking.editingStatus = status;
   booking.status = status;
@@ -257,112 +354,29 @@ function selectStatus(booking: Booking, status: string) {
   updateBookingStatus(booking.id, status);
 }
 
+// 🔄 ส่งคำขอ PATCH ไป backend เพื่ออัปเดตสถานะของรายการนั้น
 async function updateBookingStatus(id: number, status: string) {
   const token = localStorage.getItem("authToken");
-
-  // ✅ เพิ่มบรรทัดนี้เพื่อเช็กว่า token มีหรือเปล่า
-  console.log("TOKEN:", token);
 
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`, // ต้องไม่เป็น null
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ status }),
   });
 
   if (res.ok) {
-    showPopup.value = true;
+    showPopup.value = true; // แสดง popup แจ้งเตือนว่าทำสำเร็จ
     setTimeout(() => {
       showPopup.value = false;
     }, 3000);
-    await fetchBookings();
+    await fetchBookings(); // โหลดข้อมูลใหม่อีกรอบเพื่อให้แสดงผลถูกต้อง
   }
 }
-
-function openDetailModal(booking: Booking) {
-  selectedBooking.value = booking;
-  showDetailModal.value = true;
-}
-
-function closeDetailModal() {
-  showDetailModal.value = false;
-  selectedBooking.value = null;
-}
-
-function mapBooking(raw: any): Booking {
-  const slots = raw.bookingSlots || [];
-  const services = raw.bookingServices || [];
-  const minStart = slots.length
-    ? new Date(
-        Math.min(...slots.map((s: any) => new Date(s.startTime).getTime()))
-      )
-    : null;
-  const totalDuration = services.reduce(
-    (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
-    0
-  );
-  const totalPrice = services.reduce(
-    (sum: number, bs: any) => sum + (bs.service?.price || 0),
-    0
-  );
-  const calculatedEnd = minStart
-    ? new Date(minStart.getTime() + totalDuration * 60000)
-    : null;
-
-  return {
-    id: raw.id,
-    customerName: raw.user?.uName || "ไม่ระบุชื่อ",
-    date: raw.bookingDate,
-    startTime:
-      minStart?.toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }) || "-",
-    endTime:
-      calculatedEnd?.toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }) || "-",
-    duration: totalDuration,
-    totalPrice,
-    serviceCount: services.length,
-    slotName: slots[0]?.slot?.slotName || "-",
-    status: raw.status,
-    editingStatus: raw.status ?? "",
-    services: services.map((bs: any) => bs.service || {}),
-  };
-}
-
-async function fetchBookings() {
-  const res = await fetch("http://localhost:3000/bookings", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-    },
-  });
-  const data = await res.json();
-  const bookingList = Array.isArray(data) ? data : data.data; // ใช้ .data ถ้ามี
-
-  if (!Array.isArray(bookingList)) {
-    throw new Error("ข้อมูล booking ไม่ถูกต้อง");
-  }
-
-  bookings.value = bookingList.map(mapBooking); // ❗ แก้ตรงนี้
-
-  console.log("Booking response:", data);
-}
-
-function filterBookings() {}
-
-const filteredBookings = computed(() => {
-  if (!selectedDate.value) return bookings.value;
-  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value));
-});
-
-onMounted(fetchBookings);
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");

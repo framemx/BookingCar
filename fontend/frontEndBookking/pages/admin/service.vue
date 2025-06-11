@@ -165,16 +165,22 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: "admin" });
-import { ref, reactive, onMounted } from "vue";
+definePageMeta({ layout: "admin" }); // กำหนด layout สำหรับหน้านี้ให้ใช้ layout admin
 
-// ฟังก์ชันจัดการเมื่อ token หมดอายุ
+import { ref, reactive, onMounted } from "vue"; // นำเข้าฟังก์ชันจาก Vue
+
+//-----------------------------------------
+// 1. ตรวจสอบว่า token หมดอายุหรือไม่
+//-----------------------------------------
 function handleUnauthorized() {
   localStorage.removeItem("authToken");
   alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
-  navigateTo("/login");
+  navigateTo("/login"); // เปลี่ยนหน้าไป login
 }
 
+//-----------------------------------------
+// 2. ฟังก์ชันใช้สร้าง header สำหรับเรียก API
+//-----------------------------------------
 function getAuthHeaders() {
   const token =
     localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
@@ -184,6 +190,9 @@ function getAuthHeaders() {
   };
 }
 
+//-----------------------------------------
+// 3. ประกาศ interface สำหรับข้อมูลบริการ (Service)
+//-----------------------------------------
 interface Service {
   id: number;
   sName: string;
@@ -192,8 +201,14 @@ interface Service {
   durationMinutes: number;
 }
 
+//-----------------------------------------
+// 4. ตัวแปรเก็บข้อมูลบริการทั้งหมดที่ดึงจาก API
+//-----------------------------------------
 const services = ref<Service[]>([]);
 
+//-----------------------------------------
+// 5. ตัวแปรใช้ควบคุม Modal "เพิ่มบริการใหม่"
+//-----------------------------------------
 const showAddModal = ref(false);
 const newService = reactive({
   sName: "",
@@ -202,6 +217,7 @@ const newService = reactive({
   durationMinutes: 0,
 });
 
+// ปิด Modal และ reset ฟอร์ม
 function closeAddModal() {
   showAddModal.value = false;
   Object.assign(newService, {
@@ -212,6 +228,7 @@ function closeAddModal() {
   });
 }
 
+// กดบันทึก "เพิ่มบริการ" → ส่ง POST ไปหลังบ้าน
 async function submitNewService() {
   const res = await fetch("http://localhost:3000/services", {
     method: "POST",
@@ -222,10 +239,13 @@ async function submitNewService() {
   if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ");
 
-  await fetchServices();
-  closeAddModal();
+  await fetchServices(); // อัปเดตตาราง
+  closeAddModal(); // ปิด modal
 }
 
+//-----------------------------------------
+// 6. Modal "แก้ไขบริการ"
+//-----------------------------------------
 const showEditModal = ref(false);
 const editServiceData = reactive<Service>({
   id: 0,
@@ -235,8 +255,9 @@ const editServiceData = reactive<Service>({
   durationMinutes: 0,
 });
 
+// เปิด Modal พร้อมกรอกข้อมูลจากรายการที่เลือก
 function openEditModal(service: Service) {
-  Object.assign(editServiceData, service);
+  Object.assign(editServiceData, service); // คัดลอกข้อมูลเข้า modal
   showEditModal.value = true;
 }
 
@@ -244,6 +265,7 @@ function closeEditModal() {
   showEditModal.value = false;
 }
 
+// ส่ง PUT เพื่ออัปเดตบริการในระบบ
 async function submitEditService() {
   const res = await fetch(
     `http://localhost:3000/services/${editServiceData.id}`,
@@ -257,23 +279,29 @@ async function submitEditService() {
   if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ");
 
-  await fetchServices();
+  await fetchServices(); // โหลดรายการบริการใหม่
   closeEditModal();
 }
 
+//-----------------------------------------
+// 7. Modal "ลบบริการ"
+//-----------------------------------------
 const showDeleteModal = ref(false);
 const serviceToDelete = ref<Service | null>(null);
 
+// เปิด Modal เพื่อยืนยันการลบ
 function confirmDelete(service: Service) {
   serviceToDelete.value = service;
   showDeleteModal.value = true;
 }
 
+// ปิด modal ยืนยันลบ
 function cancelDelete() {
   showDeleteModal.value = false;
   serviceToDelete.value = null;
 }
 
+// ลบบริการที่เลือก
 async function deleteService() {
   if (!serviceToDelete.value) return;
 
@@ -288,10 +316,13 @@ async function deleteService() {
   if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("ลบบริการไม่สำเร็จ");
 
-  await fetchServices();
+  await fetchServices(); // โหลดรายการบริการใหม่หลังลบ
   cancelDelete();
 }
 
+//-----------------------------------------
+// 8. ดึงบริการทั้งหมดจาก API (ใช้ทุกครั้งที่เพิ่ม/ลบ/แก้ไขเสร็จ)
+//-----------------------------------------
 async function fetchServices() {
   const res = await fetch("http://localhost:3000/services", {
     headers: getAuthHeaders(),
@@ -303,7 +334,9 @@ async function fetchServices() {
   services.value = data.data || [];
 }
 
-// ตรวจสอบ token ตอนเข้า
+//-----------------------------------------
+// 9. เรียกฟังก์ชัน fetchServices เมื่อ component โหลดครั้งแรก
+//-----------------------------------------
 onMounted(() => {
   const token = localStorage.getItem("authToken");
   if (!token) {
@@ -311,8 +344,9 @@ onMounted(() => {
     navigateTo("/");
     return;
   }
-  fetchServices();
+  fetchServices(); // ดึงบริการมาแสดงในตาราง
 });
+
 </script>
 
 
