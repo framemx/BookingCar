@@ -157,6 +157,17 @@
 import { ref, onMounted, computed } from "vue";
 definePageMeta({ layout: "admin" });
 
+onMounted(async () => {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+    router.push("/"); // ไปหน้า login
+    return;
+  }
+  await fetchBookings();
+});
+
+
 interface Service {
   id: number;
   sName: string;

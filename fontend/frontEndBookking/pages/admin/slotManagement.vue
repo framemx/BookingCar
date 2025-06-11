@@ -187,9 +187,17 @@ async function saveSlots() {
     try {
       const res = await fetch("http://localhost:3000/slots", {
         method: "POST",
-        headers: getAuthHeaders(), // ✅ แนบ token ไป
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
+
+      // ✅ ตรวจสอบ token หมดอายุ
+      if (res.status === 401) {
+        localStorage.removeItem("authToken");
+        alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        window.location.href = "/login"; // หรือใช้ navigateTo("/login") ถ้าใช้ Nuxt
+        return;
+      }
 
       const responseData = await res.json();
       if (!res.ok) {
@@ -205,6 +213,7 @@ async function saveSlots() {
 
   alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว");
 }
+
 </script>
 
 <style scoped>

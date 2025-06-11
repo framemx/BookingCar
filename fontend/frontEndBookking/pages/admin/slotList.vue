@@ -211,15 +211,24 @@ async function fetchSlots() {
     const res = await fetch("http://localhost:3000/slots", {
       headers: getAuthHeaders(),
     });
-    if (!res.ok)
-      throw new Error((await res.json()).error || "โหลดข้อมูลไม่สำเร็จ");
-    slots.value = await res.json();
+
+    // ✅ เพิ่มการจัดการกรณี token หมดอายุ
+    if (res.status === 401) {
+      localStorage.removeItem("authToken");
+      alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      navigateTo("/login");
+      return;
+    }
+
+    const data = await res.json();
+    slots.value = data;
   } catch (err) {
     alert(err.message);
   } finally {
     loading.value = false;
   }
 }
+
 
 function formatTime(timeString) {
   if (!timeString) return "ไม่มีเวลา";

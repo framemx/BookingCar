@@ -294,19 +294,19 @@
             <ul class="space-y-3 text-sm">
               <li class="flex items-center space-x-3 text-gray-300">
                 <span class="text-blue-400">📍</span>
-                <span>123 ถนนสุขุมวิท กรุงเทพฯ 10110</span>
+                <span>288 หมู่ 5 อ.ธาตุพนม จ.นครพนม 48110</span>
               </li>
               <li class="flex items-center space-x-3 text-gray-300">
                 <span class="text-green-400">📱</span>
-                <span>02-123-4567</span>
+                <span>088-561-5423</span>
               </li>
               <li class="flex items-center space-x-3 text-gray-300">
                 <span class="text-purple-400">✉️</span>
-                <span>info@carcarepro.com</span>
+                <span>banhonrukrod.com</span>
               </li>
               <li class="flex items-center space-x-3 text-gray-300">
                 <span class="text-orange-400">⏰</span>
-                <span>จันทร์-อาทิตย์ 8:00-20:00</span>
+                <span>จันทร์-เสาร์ 09:00-16:00</span>
               </li>
             </ul>
           </div>

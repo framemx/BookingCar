@@ -168,6 +168,13 @@
 definePageMeta({ layout: "admin" });
 import { ref, reactive, onMounted } from "vue";
 
+// ฟังก์ชันจัดการเมื่อ token หมดอายุ
+function handleUnauthorized() {
+  localStorage.removeItem("authToken");
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+  navigateTo("/login");
+}
+
 function getAuthHeaders() {
   const token =
     localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
@@ -208,10 +215,13 @@ function closeAddModal() {
 async function submitNewService() {
   const res = await fetch("http://localhost:3000/services", {
     method: "POST",
-    headers: getAuthHeaders(), // ✅
+    headers: getAuthHeaders(),
     body: JSON.stringify(newService),
   });
+
+  if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ");
+
   await fetchServices();
   closeAddModal();
 }
@@ -229,19 +239,24 @@ function openEditModal(service: Service) {
   Object.assign(editServiceData, service);
   showEditModal.value = true;
 }
+
 function closeEditModal() {
   showEditModal.value = false;
 }
+
 async function submitEditService() {
   const res = await fetch(
     `http://localhost:3000/services/${editServiceData.id}`,
     {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(editServiceData),
     }
   );
+
+  if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ");
+
   await fetchServices();
   closeEditModal();
 }
@@ -253,40 +268,53 @@ function confirmDelete(service: Service) {
   serviceToDelete.value = service;
   showDeleteModal.value = true;
 }
+
 function cancelDelete() {
   showDeleteModal.value = false;
   serviceToDelete.value = null;
 }
+
 async function deleteService() {
   if (!serviceToDelete.value) return;
+
   const res = await fetch(
     `http://localhost:3000/services/${serviceToDelete.value.id}`,
     {
       method: "DELETE",
+      headers: getAuthHeaders(),
     }
   );
+
+  if (res.status === 401) return handleUnauthorized();
   if (!res.ok) return alert("ลบบริการไม่สำเร็จ");
+
   await fetchServices();
   cancelDelete();
 }
 
 async function fetchServices() {
   const res = await fetch("http://localhost:3000/services", {
-    headers: getAuthHeaders(), // ✅ เพิ่มตรงนี้
+    headers: getAuthHeaders(),
   });
 
-  if (res.status === 401) {
-    alert("กรุณาเข้าสู่ระบบใหม่");
-    navigateTo("/login"); // หรือจะ reload ก็ได้
-    return;
-  }
+  if (res.status === 401) return handleUnauthorized();
 
   const data = await res.json();
   services.value = data.data || [];
 }
 
-onMounted(fetchServices);
+// ตรวจสอบ token ตอนเข้า
+onMounted(() => {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+    navigateTo("/");
+    return;
+  }
+  fetchServices();
+});
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");

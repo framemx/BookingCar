@@ -79,51 +79,47 @@ const form = reactive({
   role: 'USER',
 });
 
-// ฟังก์ชันสำหรับสร้าง headers พร้อม authentication
 function getAuthHeaders() {
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 }
 
-// ฟังก์ชันเช็คว่ามี token หรือไม่
 function checkAuth() {
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   if (!token) {
     error.value = 'กรุณาเข้าสู่ระบบก่อนใช้งาน';
-    // redirect to login page
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
     navigateTo('/login');
     return false;
   }
   return true;
 }
 
+function handle401(res: Response) {
+  if (res.status === 401) {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    error.value = 'กรุณาเข้าสู่ระบบใหม่';
+    navigateTo('/login');
+    return true;
+  }
+  return false;
+}
+
 async function fetchUsers() {
   if (!checkAuth()) return;
-  
   try {
     const res = await fetch('http://localhost:3000/users', {
       headers: getAuthHeaders()
     });
-    
-    if (res.status === 401) {
-      error.value = 'กรุณาเข้าสู่ระบบใหม่';
-      // redirect to login
-      navigateTo('/login');
-      return;
-    }
-    
+    if (handle401(res)) return;
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'โหลดข้อมูลไม่สำเร็จ');
     users.value = data.data;
-    error.value = ''; // clear previous errors
+    error.value = '';
   } catch (err: any) {
     error.value = err.message;
   }
@@ -131,7 +127,7 @@ async function fetchUsers() {
 
 async function handleSubmit() {
   if (!checkAuth()) return;
-  
+
   error.value = '';
   success.value = '';
   try {
@@ -158,11 +154,7 @@ async function handleSubmit() {
       });
     }
 
-    if (res.status === 401) {
-      error.value = 'กรุณาเข้าสู่ระบบใหม่';
-      navigateTo('/login');
-      return;
-    }
+    if (handle401(res)) return;
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'เกิดข้อผิดพลาด');
@@ -201,19 +193,15 @@ function resetForm() {
 async function deleteUser(id: number) {
   if (!checkAuth()) return;
   if (!confirm('คุณต้องการลบผู้ใช้นี้หรือไม่?')) return;
-  
+
   try {
     const res = await fetch(`http://localhost:3000/users/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    
-    if (res.status === 401) {
-      error.value = 'กรุณาเข้าสู่ระบบใหม่';
-      navigateTo('/login');
-      return;
-    }
-    
+
+    if (handle401(res)) return;
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'ลบไม่สำเร็จ');
     success.value = 'ลบผู้ใช้สำเร็จ';
@@ -225,6 +213,7 @@ async function deleteUser(id: number) {
 
 onMounted(fetchUsers);
 </script>
+
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');
