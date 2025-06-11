@@ -281,23 +281,28 @@ onMounted(fetchSlots);
 .btn-add {
   background: #1e3a8a;
   color: white;
-  padding: 0.55rem 1.4rem;
-  font-weight: 600;
-  font-size: 0.95rem;
+  padding: 0.6rem 1.6rem;
+  font-weight: 700;
+  font-size: 1rem;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: 0.2s;
+}
+
+.btn-add:hover {
+  background: #3b82f6;
 }
 
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1rem;
 }
 
@@ -305,31 +310,70 @@ onMounted(fetchSlots);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #1e3a8a;
+  color: #1e40af;
 }
 
 .date-picker-wrapper {
   display: flex;
   align-items: center;
-  border: 2px solid #3b82f6;
+  border: 2px solid #1e40af;
   border-radius: 9999px;
-  padding: 0.3rem 1rem;
-  gap: 0.5rem;
-  background-color: white;
+  padding: 0.4rem 1rem;
+  gap: 0.75rem;
+  background-color: #1e40af;
+  transition: border-color 0.3s ease;
+}
+
+.date-picker-wrapper:focus-within {
+  border-color: #ffffff;
 }
 
 .custom-date-input {
   border: none;
   outline: none;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
-  color: #1e293b;
-  background: transparent;
+  color: #ffffff;
+  background-color: transparent;
+  padding: 0.4rem 0;
+  appearance: none;
+  width: 140px;
+  cursor: pointer;
+}
+
+/* เพิ่มลูกศร calendar สำหรับ Chrome */
+.custom-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(20%) sepia(90%) saturate(300%) hue-rotate(190deg);
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+}
+
+/* ปรับปุ่มล้างตัวกรอง */
+.filter-bar button {
+  background-color: #ff1a1a;
+  color: white;
+  padding: 0.45rem 1.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filter-bar button:hover {
+  background-color: #3b82f6;
+}
+
+/* Firefox & Edge */
+.custom-date-input:focus {
+  outline: none;
 }
 
 .i-lucide-calendar {
-  color: #1e3a8a;
-  font-size: 1.2rem;
+  color: #2563eb;
+  font-size: 1.4rem;
 }
 
 .slot-list {
@@ -344,6 +388,7 @@ onMounted(fetchSlots);
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   font-size: 1rem;
+  font-weight: 600;
   transition: transform 0.2s;
 }
 
@@ -353,12 +398,12 @@ onMounted(fetchSlots);
 
 .available {
   color: #16a34a;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .booked {
   color: #dc2626;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .btn-group {
@@ -369,9 +414,9 @@ onMounted(fetchSlots);
 
 .btn-edit,
 .btn-delete {
-  padding: 0.4rem 1rem;
+  padding: 0.4rem 1.1rem;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
@@ -425,6 +470,7 @@ onMounted(fetchSlots);
   display: flex;
   flex-direction: column;
   width: 100%;
+  font-weight: 600;
 }
 
 .form-input {

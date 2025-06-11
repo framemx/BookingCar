@@ -433,7 +433,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow: visible;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);

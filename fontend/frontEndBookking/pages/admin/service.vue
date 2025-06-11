@@ -465,6 +465,12 @@ onMounted(() => {
   font-family: "Kanit", sans-serif;
   margin-bottom: 1.25rem;
   font-size: 1rem;
+  color: #1e3a8a;
+}
+.modal input::placeholder,
+.modal textarea::placeholder {
+  color: #94a3b8; /* สี placeholder แบบอ่อน ดูเรียบร้อย */
+  font-weight: 400;
 }
 
 .modal-footer {
