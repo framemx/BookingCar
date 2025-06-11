@@ -9,7 +9,6 @@
           <label for="date">📅 เลือกวันที่</label>
           <input
             type="date"
-            id="date"
             v-model="date"
             :min="minDate"
             required
@@ -22,7 +21,7 @@
           <label>⏰ เลือกเวลาที่ต้องการ</label>
           <div class="custom-dropdown">
             <div class="dropdown-selected" @click="toggleDropdown">
-              {{ selectedSlotLabel || '⏰ กรุณาเลือกเวลา' }}
+              {{ selectedSlotLabel || "⏰ กรุณาเลือกเวลา" }}
             </div>
             <div v-if="dropdownOpen" class="dropdown-options animate-fade-in">
               <template v-for="(group, index) in groupedSlots" :key="index">
@@ -36,7 +35,9 @@
                   :class="{ booked: slot.booked }"
                   @click="selectSlot(slot)"
                 >
-                  ⏰ {{ slot.start }} - {{ slot.end }} ({{ slot.booked ? "จองแล้ว" : "ว่าง" }})
+                  ⏰ {{ slot.start }} - {{ slot.end }} ({{
+                    slot.booked ? "จองแล้ว" : "ว่าง"
+                  }})
                 </div>
               </template>
             </div>
@@ -45,7 +46,9 @@
           <p v-if="selectedSlot" class="status-text">
             สถานะ:
             <span
-              :class="selectedSlot.booked ? 'status-booked' : 'status-available'"
+              :class="
+                selectedSlot.booked ? 'status-booked' : 'status-available'
+              "
             >
               {{ selectedSlot.booked ? "❌ จองแล้ว" : "✅ ว่าง" }}
             </span>
@@ -82,8 +85,12 @@
 
         <!-- สรุป -->
         <div class="summary" v-if="selectedServices.length > 0">
-          <p>⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที</p>
-          <p>💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท</p>
+          <p>
+            ⏰ เวลารวม: <strong>{{ totalDuration }}</strong> นาที
+          </p>
+          <p>
+            💰 ราคาทั้งหมด: <strong>{{ totalPrice }}</strong> บาท
+          </p>
         </div>
 
         <button class="btn-submit" :disabled="!canSubmit" type="submit">
@@ -93,7 +100,6 @@
     </div>
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
@@ -109,6 +115,15 @@ const services = ref([]);
 const slots = ref([]);
 const confirmedBookings = ref([]);
 
+function getAuthHeaders() {
+  const token =
+    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
 const dropdownOpen = ref(false);
 const toggleDropdown = () => (dropdownOpen.value = !dropdownOpen.value);
 const selectSlot = (slot: any) => {
@@ -118,7 +133,9 @@ const selectSlot = (slot: any) => {
 };
 
 const selectedSlotLabel = computed(() =>
-  selectedSlot.value ? `${selectedSlot.value.start} - ${selectedSlot.value.end}` : ""
+  selectedSlot.value
+    ? `${selectedSlot.value.start} - ${selectedSlot.value.end}`
+    : ""
 );
 
 const minDate = new Date().toISOString().slice(0, 10);
@@ -226,19 +243,25 @@ const canSubmit = computed(
 );
 
 const fetchSlots = async () => {
-  const res = await fetch("http://localhost:3000/slots");
+  const res = await fetch("http://localhost:3000/slots", {
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) return alert("โหลด slot ไม่สำเร็จ");
   slots.value = await res.json();
 };
 
 const fetchServices = async () => {
-  const res = await fetch("http://localhost:3000/services");
+  const res = await fetch("http://localhost:3000/services", {
+    headers: getAuthHeaders(),
+  });
   const data = await res.json();
   services.value = data.data || [];
 };
 
 const fetchConfirmedBookings = async () => {
-  const res = await fetch("http://localhost:3000/bookings");
+  const res = await fetch("http://localhost:3000/bookings", {
+    headers: getAuthHeaders(),
+  });
   const data = await res.json();
   confirmedBookings.value = data.filter((b) => b.status === "confirmed");
 };
@@ -264,7 +287,7 @@ const submitBooking = async () => {
 
   const res = await fetch("http://localhost:3000/bookings", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -288,10 +311,8 @@ watch(date, () => {
 });
 </script>
 
-
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");
-
 
 .page-container {
   font-family: "Kanit", sans-serif;
@@ -516,12 +537,24 @@ select:focus,
 }
 /* Animation classes */
 @keyframes pop {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-pop {
   animation: pop 0.4s ease-out;
@@ -539,7 +572,8 @@ select:focus,
 .dropdown-selected {
   transition: box-shadow 0.2s ease;
 }
-.dropdown-selected:focus, .dropdown-selected:hover {
+.dropdown-selected:focus,
+.dropdown-selected:hover {
   box-shadow: 0 0 6px #2563eb80;
 }
 

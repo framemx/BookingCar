@@ -225,9 +225,15 @@ function statusColor(status: string) {
 
 async function deleteBooking(id: number) {
   if (!confirm("คุณแน่ใจว่าต้องลบการจองนี้หรือไม่?")) return;
+  const token = localStorage.getItem("authToken");
   const res = await fetch(`http://localhost:3000/bookings/${id}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
   });
+
   if (!res.ok) return alert("ลบไม่สำเร็จ");
   bookings.value = bookings.value.filter((b) => b.id !== id);
   alert("ลบการจองแล้ว");
@@ -241,11 +247,20 @@ function selectStatus(booking: Booking, status: string) {
 }
 
 async function updateBookingStatus(id: number, status: string) {
+  const token = localStorage.getItem("authToken");
+
+  // ✅ เพิ่มบรรทัดนี้เพื่อเช็กว่า token มีหรือเปล่า
+  console.log("TOKEN:", token);
+
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`, // ต้องไม่เป็น null
+    },
     body: JSON.stringify({ status }),
   });
+
   if (res.ok) {
     showPopup.value = true;
     setTimeout(() => {

@@ -88,9 +88,9 @@ async function handleLogin() {
     if (!res.ok) throw new Error(data.message || "Login failed");
 
     // บันทึกโทเคนและข้อมูลผู้ใช้
-    localStorage.setItem("authToken", data.data.token);
     localStorage.setItem(
       "userData",
+
       JSON.stringify({
         id: data.data.id,
         name: data.data.uName,
@@ -98,8 +98,12 @@ async function handleLogin() {
         phone: data.data.phone || "",
         profilePicture: data.data.profilePicture || "👤",
         role: data.data.role,
+        token: data.data.token, // ✅ เพิ่มตรงนี้เข้าไป!
       })
     );
+
+    // ✅ เพิ่มอันนี้!
+    localStorage.setItem("authToken", data.data.token);
 
     // เปลี่ยนเส้นทางตามบทบาท
     if (data.data.role === "ADMIN") {
@@ -108,7 +112,7 @@ async function handleLogin() {
       router.push("/user/home"); // เปลี่ยนไปหน้าแรกของผู้ใช้ทั่วไป
     }
   } catch (err: any) {
-    error.value = err.message;
+    error.value = "ไม่สามารถเข้าสู่ระบบได้: บทบาทไม่ถูกต้อง";
   }
 }
 

@@ -106,28 +106,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import UIcon from '~/components/UIcon.vue';
 
 definePageMeta({ layout: "user" });
 
+const router = useRouter();
 const activeImage = ref<string | null>(null);
 
-// ลบ reactive state ที่ไม่จำเป็นออก
-// เพราะไม่ได้ใช้งานใน template จริง ๆ
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+    if (!token) {
+      router.push("/");
+    }
+  }
+});
 
 function getAuthHeaders() {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  
-  // ตรวจสอบว่าอยู่ใน client-side หรือไม่ก่อนเข้าถึง localStorage
+
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
   }
-  
   return headers;
 }
 
@@ -180,6 +187,7 @@ const reasons = [
   },
 ];
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap");

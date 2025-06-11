@@ -6,16 +6,15 @@ const prisma = new PrismaClient();
 const checkSlotAvailability = async (tx, slots) => {
   for (const { slotId, startTime, endTime } of slots) {
     const overlapping = await tx.bookingSlot.count({
-  where: {
-    slotId,
-    startTime: { lt: new Date(endTime) },
-    endTime: { gt: new Date(startTime) },
-    booking: {
-      status: 'confirmed'  // ✅ เช็กเฉพาะ booking ที่ยืนยันแล้วเท่านั้น
-    }
-  },
-});
-
+      where: {
+        slotId,
+        startTime: { lt: new Date(endTime) },
+        endTime: { gt: new Date(startTime) },
+        booking: {
+          status: "confirmed", // ✅ เช็กเฉพาะ booking ที่ยืนยันแล้วเท่านั้น
+        },
+      },
+    });
 
     const slot = await tx.slot.findUnique({ where: { id: slotId } });
 
@@ -26,7 +25,6 @@ const checkSlotAvailability = async (tx, slots) => {
     }
   }
 };
-
 
 // ฟังก์ชันเช็ค services ว่ามีอยู่จริง
 const checkServicesExist = async (tx, services) => {
@@ -100,7 +98,6 @@ const createBooking = async (data) => {
   });
 };
 
-
 const getAllBookings = async () => {
   return await prisma.booking.findMany({
     include: {
@@ -142,7 +139,13 @@ const updateBooking = async (id, data) => {
 
     const updatedBooking = await tx.booking.update({
       where: { id },
-      data: updateData,
+      data: {
+        status, // ✅ ใส่ status ไปตรงๆ ด้วย
+        ...(bookingDate !== undefined && {
+          bookingDate: new Date(bookingDate),
+        }),
+        ...(description !== undefined && { description }),
+      },
     });
 
     if (services) {
@@ -182,7 +185,6 @@ const deleteBooking = async (id) => {
   });
 };
 
-
 // ดึง booking ทั้งหมดจาก email
 async function getBookingsByEmail(email) {
   return await prisma.booking.findMany({
@@ -205,7 +207,7 @@ async function getBookingsByEmail(email) {
       },
     },
   });
-};
+}
 
 // ✅ ดึง booking ทั้งหมดตาม userId
 async function getBookingsByUserId(userId) {
@@ -226,8 +228,6 @@ async function getBookingsByUserId(userId) {
     },
   });
 }
-
-
 
 module.exports = {
   createBooking,

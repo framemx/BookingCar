@@ -2,6 +2,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: false, // ← ✅ ปิด Server-Side Rendering ชั่วคราว
+
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
@@ -17,8 +19,7 @@ export default defineNuxtConfig({
     port: 4000,
   },
 
-  // เพิ่มการกำหนดค่า router และ middleware
   router: {
-    middleware: 'auth', // ใช้ middleware ชื่อ 'auth' สำหรับทุกเส้นทาง
+    middleware: 'auth',
   },
 });

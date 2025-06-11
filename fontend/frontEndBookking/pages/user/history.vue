@@ -108,14 +108,25 @@ const displayedBookings = computed(() => {
 
 onMounted(async () => {
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const token = userData.token;
   const userEmail = userData.email;
 
-  const res = await fetch(`http://localhost:3000/bookings?userEmail=${userEmail}`);
+  if (!token || !userEmail) {
+    router.push("/");
+    return;
+  }
+
+  const res = await fetch(`http://localhost:3000/bookings?userEmail=${userEmail}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
   const data = await res.json();
-
-  allBookings.value = data; // ไม่กรองสถานะเลย
-
+  allBookings.value = Array.isArray(data) ? data : [];
 });
+
 
 
 

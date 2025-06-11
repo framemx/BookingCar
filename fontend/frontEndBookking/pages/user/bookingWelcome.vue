@@ -322,7 +322,10 @@ async function fetchSlots() {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     };
-    const res = await fetch("http://localhost:3000/bookings", { headers }); // เปลี่ยนจาก /slots เป็น /bookings
+
+    // ✅ เปลี่ยนจาก /bookings เป็น /slots
+    const res = await fetch("http://localhost:3000/slots", { headers });
+
     if (!res.ok) {
       const errorData = await res.json();
       if (res.status === 401 || res.status === 403) {
@@ -331,15 +334,20 @@ async function fetchSlots() {
         router.push("/");
         return;
       }
-      throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status} - ${errorData.message || ''}`);
+      throw new Error(
+        `ข้อผิดพลาด HTTP! สถานะ: ${res.status} - ${errorData.message || ""}`
+      );
     }
+
     const data = await res.json();
-    slots.value = Array.isArray(data) ? data.map((slot) => ({
-      ...slot,
-      date: getLocalDateString(new Date(slot.date)),
-      startTime: new Date(`${slot.date}T${slot.startTime}:00`),
-      endTime: new Date(`${slot.date}T${slot.endTime}:00`),
-    })) : [];
+    slots.value = Array.isArray(data)
+      ? data.map((slot) => ({
+          ...slot,
+          date: getLocalDateString(new Date(slot.date)),
+          startTime: new Date(`${slot.date}T${slot.startTime}:00`),
+          endTime: new Date(`${slot.date}T${slot.endTime}:00`),
+        }))
+      : [];
   } catch (error) {
     console.error("ข้อผิดพลาดในการดึง slots:", error);
     slots.value = [];
@@ -364,11 +372,15 @@ async function fetchAllBookings() {
     );
     if (!res.ok) throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status}`);
     const data = await res.json();
-    userBookings.value = Array.isArray(data) ? data : [];
+    userBookings.value = Array.isArray(data)
+  ? data.filter(b => b.status?.toLowerCase() === "confirmed" || b.status?.toLowerCase() === "pending")
+  : [];
+
   } catch (error) {
     console.error("ข้อผิดพลาดในการดึง bookings:", error);
     userBookings.value = [];
   }
+  
 }
 
 async function refreshBookings() {
@@ -435,11 +447,13 @@ watch(
 );
 
 const todayBookings = computed(() => {
-  const today = getCurrentDateString();
+  const today = getCurrentDateString(); // "2025-06-11"
   return combinedBookings.value.filter(
     (b) => b.bookingDate.slice(0, 10) === today
   );
 });
+
+
 
 function goToHistory() {
   router.push("/user/history");
@@ -460,7 +474,10 @@ async function fetchConfirmedBookingsForSlots() {
     const res = await fetch("http://localhost:3000/bookings", { headers });
     if (!res.ok) throw new Error(`ข้อผิดพลาด HTTP! สถานะ: ${res.status}`);
     const data = await res.json();
-    allConfirmedBookings.value = Array.isArray(data) ? data.filter((b) => b.status === "confirmed") : [];
+    console.log("✅ Confirmed bookings:", data);
+    allConfirmedBookings.value = Array.isArray(data)
+      ? data.filter((b) => b.status?.toLowerCase() === "confirmed")
+      : [];
   } catch (error) {
     console.error("ข้อผิดพลาดในการดึง confirmed bookings:", error);
     allConfirmedBookings.value = [];
@@ -471,10 +488,10 @@ function formatDuration(minutes) {
   if (minutes < 60) {
     return `${minutes} นาที`;
   }
-  
+
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  
+
   if (remainingMinutes === 0) {
     return `${hours} ชม.`;
   } else {
@@ -617,7 +634,8 @@ function formatDuration(minutes) {
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%) hue-rotate(209deg) brightness(90%) contrast(100%);
+  filter: brightness(0) saturate(100%) invert(12%) sepia(70%) saturate(6883%)
+    hue-rotate(209deg) brightness(90%) contrast(100%);
   cursor: pointer;
   height: 14px;
   width: 14px;

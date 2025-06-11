@@ -18,21 +18,24 @@
             <div
               class="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full blur opacity-40 group-hover:opacity-60 transition-opacity"
             ></div>
-            <img
-              v-if="!imageError"
-              :src="logoSrc"
-              alt="logo"
-              class="relative h-12 w-12 rounded-full shadow-xl border-2 border-white/80 transition-all duration-300 group-hover:scale-110 group-hover:border-cyan-300"
-              @error="handleImageError"
-              @load="handleImageLoad"
-            />
-            <!-- Enhanced Fallback logo -->
-            <div
-              v-else
-              class="relative h-12 w-12 rounded-full shadow-xl border-2 border-white/80 bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xl transition-all duration-300 group-hover:scale-110"
-            >
-              🚗
-            </div>
+            <ClientOnly>
+              <template v-if="!imageError">
+                <img
+                  :src="logoSrc"
+                  alt="logo"
+                  class="relative h-12 w-12 rounded-full shadow-xl border-2 border-white/80 transition-all duration-300 group-hover:scale-110 group-hover:border-cyan-300"
+                  @error="handleImageError"
+                  @load="handleImageLoad"
+                />
+              </template>
+              <template v-else>
+                <div
+                  class="relative h-12 w-12 rounded-full shadow-xl border-2 border-white/80 bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xl transition-all duration-300 group-hover:scale-110"
+                >
+                  🚗
+                </div>
+              </template>
+            </ClientOnly>
           </div>
           <div class="flex flex-col">
             <span
