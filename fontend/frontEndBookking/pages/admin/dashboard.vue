@@ -14,7 +14,7 @@
           @change="filterBookings"
           class="date-input"
         />
-      </div>
+      </div>  
 
       <div class="table-wrapper">
         <table class="booking-table">
