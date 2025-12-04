@@ -3,19 +3,21 @@
     <div class="content-wrapper">
       <h1 class="page-title">📋 รายการจองทั้งหมด</h1>
 
+      <!-- DATE FILTER -->
       <div class="date-filter-bar">
         <label class="date-label" for="filter-date">
           <span class="calendar-icon">📅</span> เลือกวันที่:
         </label>
+
         <input
           type="date"
           id="filter-date"
           v-model="selectedDate"
-          @change="filterBookings"
           class="date-input"
         />
-      </div>  
+      </div>
 
+      <!-- TABLE -->
       <div class="table-wrapper">
         <table class="booking-table">
           <thead>
@@ -32,6 +34,7 @@
               <th>สถานะ</th>
             </tr>
           </thead>
+
           <tbody>
             <tr
               v-for="booking in filteredBookings"
@@ -41,13 +44,14 @@
             >
               <td>{{ booking.id }}</td>
               <td>{{ booking.customerName }}</td>
-              <td>{{ new Date(booking.date).toLocaleDateString("th-TH") }}</td>
+              <td>{{ formatDate(booking.date) }}</td>
               <td class="center">{{ booking.slotName }}</td>
               <td>{{ booking.startTime }}</td>
               <td>{{ booking.endTime }}</td>
               <td class="center">{{ booking.duration }} นาที</td>
               <td class="center">{{ booking.totalPrice }} ฿</td>
               <td class="center">{{ booking.serviceCount }}</td>
+
               <td>
                 <div class="status-action-wrapper">
                   <div
@@ -57,19 +61,25 @@
                   >
                     {{ displayStatus(booking.editingStatus) }}
                   </div>
+
                   <button
                     class="delete-btn"
                     @click.stop="deleteBooking(booking.id)"
                   >
                     🗑️
                   </button>
-                  <ul v-if="openDropdown === booking.id" class="dropdown-menu">
+
+                  <ul
+                    v-if="openDropdown === booking.id"
+                    class="dropdown-menu"
+                  >
                     <li
                       @click.stop="selectStatus(booking, 'pending')"
                       class="dropdown-item"
                     >
                       🕓 รออนุมัติ
                     </li>
+
                     <li
                       @click.stop="selectStatus(booking, 'confirmed')"
                       class="dropdown-item"
@@ -80,6 +90,7 @@
                 </div>
               </td>
             </tr>
+
             <tr v-if="filteredBookings.length === 0">
               <td colspan="10" class="no-bookings">
                 ไม่มีรายการจองในวันที่เลือก
@@ -89,6 +100,7 @@
         </table>
       </div>
 
+      <!-- POPUP -->
       <div v-if="showPopup" class="popup-overlay">
         <div class="popup-content">
           <span class="popup-icon">✅</span>
@@ -99,6 +111,7 @@
         </div>
       </div>
 
+      <!-- DETAIL MODAL -->
       <teleport to="body">
         <div
           v-if="showDetailModal"
@@ -106,46 +119,46 @@
           @click.self="closeDetailModal"
         >
           <div class="modal-content">
+
             <h3 class="modal-title">📋 รายละเอียดการจอง</h3>
+
             <div class="detail-grid">
               <div
                 class="detail-item"
                 v-for="(value, label) in bookingDetailMap"
                 :key="label"
               >
-                <span class="detail-line">
-                  <span class="detail-label">📌 {{ label }}:</span>
+                <div class="detail-line">
+                  <span class="detail-label">{{ label }}:</span>
                   <span class="detail-value">{{ value }}</span>
-                </span>
+                </div>
               </div>
             </div>
+
+            <!-- SERVICES -->
             <div class="services-section">
               <h4 class="services-title">🛠️ รายการบริการ:</h4>
+
               <ul class="services-list">
                 <li
                   v-for="service in selectedBooking?.services"
                   :key="service.id"
                   class="service-item"
                 >
-                  <span class="service-name">🔧 {{ service.sName }}</span>
-                  <span class="service-details"
-                    >({{ service.durationMinutes }} นาที,
-                    {{ service.price }} ฿)</span
-                  >
+                  <span>🔧 {{ service.sName }}</span>
+                  <span>({{ service.durationMinutes }} นาที, {{ service.price }} ฿)</span>
                 </li>
-                <li
-                  v-if="!selectedBooking?.services?.length"
-                  class="no-services"
-                >
+
+                <li v-if="!selectedBooking?.services?.length" class="no-services">
                   ไม่มีบริการ
                 </li>
               </ul>
             </div>
+
             <div class="modal-footer">
-              <button class="modal-close-btn" @click="closeDetailModal">
-                ปิด
-              </button>
+              <button class="modal-close-btn" @click="closeDetailModal">ปิด</button>
             </div>
+
           </div>
         </div>
       </teleport>
@@ -154,225 +167,192 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, computed, onMounted } from "vue"
+import { useRouter } from "#app"
 
-// 🧩 กำหนด layout ที่ใช้กับหน้านี้เป็น layout 'admin'
-definePageMeta({ layout: "admin" });
+definePageMeta({ layout: "admin" })
 
-// 🧱 ประกาศชนิดข้อมูลของบริการ (Service)
-// ใช้สำหรับเก็บข้อมูลแต่ละบริการในรายการจอง เช่น ล้างรถ ขัดเคลือบ ฯลฯ
+/* ----------------- TYPES ------------------ */
 interface Service {
-  id: number;
-  sName: string;
-  description: string;
-  price: number;
-  durationMinutes: number;
+  id: number
+  sName: string
+  description: string
+  price: number
+  durationMinutes: number
 }
 
-// 🧱 ประกาศชนิดข้อมูลของรายการจอง (Booking)
-// รวมข้อมูลทั้งหมดของแต่ละการจอง เช่น ลูกค้า, วันเวลา, บริการที่เลือก, สถานะ ฯลฯ
 interface Booking {
-  id: number;
-  customerName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  duration: number;
-  totalPrice: number;
-  serviceCount: number;
-  slotName: string;
-  status: string;
-  editingStatus: string;
-  services: Service[];
+  id: number
+  customerName: string
+  date: string
+  startTime: string
+  endTime: string
+  duration: number
+  totalPrice: number
+  serviceCount: number
+  slotName: string
+  status: string
+  editingStatus: string
+  services: Service[]
 }
 
-// 📦 ตัวแปรหลักสำหรับจัดการ UI และข้อมูล
-const bookings = ref<Booking[]>([]); // รายการจองทั้งหมดที่ดึงมาจาก backend
-const selectedDate = ref<string>(""); // วันที่ที่ผู้ใช้เลือกใน input type="date"
-const openDropdown = ref<number | null>(null); // id ของรายการที่เปิด dropdown สถานะอยู่
-const showPopup = ref<boolean>(false); // ใช้ควบคุม popup เมื่อเปลี่ยนสถานะสำเร็จ
-const showDetailModal = ref<boolean>(false); // ใช้ควบคุมการเปิด/ปิด modal รายละเอียด
-const selectedBooking = ref<Booking | null>(null); // ข้อมูลของรายการที่ผู้ใช้คลิกดูรายละเอียด
+/* ----------------- STATE ------------------ */
+const router = useRouter()
+const bookings = ref<Booking[]>([])
+const selectedDate = ref("")
+const openDropdown = ref<number | null>(null)
+const showPopup = ref(false)
+const showDetailModal = ref(false)
+const selectedBooking = ref<Booking | null>(null)
 
-// 📅 เมื่อผู้ใช้เลือกวัน จะกรองรายการจองเฉพาะวันนั้น
-const filteredBookings = computed(() => {
-  if (!selectedDate.value) return bookings.value;
-  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value));
-});
+/* ----------------- UTILS ------------------ */
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("th-TH")
+}
 
-// 📋 เตรียมข้อมูลรายละเอียดการจอง สำหรับแสดงใน modal แบบ key-value
 const bookingDetailMap = computed(() => {
-  if (!selectedBooking.value) return {};
+  if (!selectedBooking.value) return {}
+
   return {
     รหัส: selectedBooking.value.id,
     ชื่อลูกค้า: selectedBooking.value.customerName,
-    วันที่จอง: new Date(selectedBooking.value.date).toLocaleDateString("th-TH"),
+    วันที่จอง: formatDate(selectedBooking.value.date),
     ช่องบริการ: selectedBooking.value.slotName,
     เวลาเริ่ม: selectedBooking.value.startTime,
     เวลาสิ้นสุด: selectedBooking.value.endTime,
     ระยะเวลา: `${selectedBooking.value.duration} นาที`,
     ราคารวม: `${selectedBooking.value.totalPrice} ฿`,
     จำนวนบริการ: selectedBooking.value.serviceCount,
-    สถานะ: displayStatus(selectedBooking.value.editingStatus),
-  };
-});
-
-// 🟢 ฟังก์ชันที่ทำงานทันทีเมื่อโหลดหน้าเสร็จ
-// 1. ตรวจสอบว่า user login แล้วหรือยัง (มี token หรือไม่)
-// 2. ถ้า login แล้วเรียก fetchBookings เพื่อดึงข้อมูลรายการจองทั้งหมดจาก backend
-onMounted(async () => {
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    router.push("/"); // ถ้าไม่มี token ส่งผู้ใช้กลับไปหน้า login
-    return;
+    สถานะ: displayStatus(selectedBooking.value.editingStatus)
   }
-  await fetchBookings();
-});
+})
 
-// 📡 เรียก API ที่ backend เพื่อนำข้อมูลการจองทั้งหมดมาเก็บไว้ใน bookings
+/* ----------------- COMPUTED ------------------ */
+const filteredBookings = computed<Booking[]>(() => {
+  if (!selectedDate.value) return bookings.value
+  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value))
+})
+
+/* ----------------- FETCHING ------------------ */
+onMounted(async () => {
+  const token = localStorage.getItem("authToken")
+  if (!token) return router.push("/")
+  await fetchBookings()
+})
+
 async function fetchBookings() {
   const res = await fetch("http://localhost:3000/bookings", {
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-    },
-  });
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`
+    }
+  })
 
-  const data = await res.json();
-  const bookingList = Array.isArray(data) ? data : data.data;
+  const data = await res.json()
+  const list = Array.isArray(data) ? data : data.data
 
-  if (!Array.isArray(bookingList)) {
-    throw new Error("ข้อมูล booking ไม่ถูกต้อง");
-  }
-
-  bookings.value = bookingList.map(mapBooking); // แปลงข้อมูลด้วย mapBooking เพื่อให้พร้อมใช้กับหน้าจอ
+  bookings.value = list.map((b: any) => mapBooking(b))
 }
 
-// 🔄 ฟังก์ชัน mapBooking ใช้แปลงข้อมูลดิบจาก backend ให้อยู่ในรูปแบบ Booking ที่ frontend ใช้ได้
+/* ----------- MAP RAW → BOOKING STRUCT ----------- */
 function mapBooking(raw: any): Booking {
-  const slots = raw.bookingSlots || [];
-  const services = raw.bookingServices || [];
+  const slots = raw.bookingSlots || []
+  const services = raw.bookingServices || []
 
-  // หาเวลาเริ่มต้นที่น้อยที่สุดจาก slot
   const minStart = slots.length
     ? new Date(Math.min(...slots.map((s: any) => new Date(s.startTime).getTime())))
-    : null;
+    : null
 
-  // คำนวณเวลารวมของบริการทั้งหมด
-  const totalDuration = services.reduce(
-    (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
+  const duration = services.reduce(
+    (sum: number, s: any) => sum + (s.service?.durationMinutes || 0),
     0
-  );
+  )
 
-  // คำนวณราคารวมของบริการทั้งหมด
   const totalPrice = services.reduce(
-    (sum: number, bs: any) => sum + (bs.service?.price || 0),
+    (sum: number, s: any) => sum + (s.service?.price || 0),
     0
-  );
+  )
 
-  // คำนวณเวลาสิ้นสุด โดยเอาเวลาเริ่ม + เวลารวม
-  const calculatedEnd = minStart
-    ? new Date(minStart.getTime() + totalDuration * 60000)
-    : null;
+  const end = minStart
+    ? new Date(minStart.getTime() + duration * 60000)
+    : null
 
   return {
     id: raw.id,
-    customerName: raw.user?.uName || "ไม่ระบุชื่อ",
+    customerName: raw.user?.uName ?? "ไม่ระบุ",
     date: raw.bookingDate,
-    startTime: minStart?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
-    endTime: calculatedEnd?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) || "-",
-    duration: totalDuration,
+    startTime: minStart?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) ?? "-",
+    endTime: end?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) ?? "-",
+    duration,
     totalPrice,
     serviceCount: services.length,
-    slotName: slots[0]?.slot?.slotName || "-",
+    slotName: slots[0]?.slot?.slotName ?? "-",
     status: raw.status,
-    editingStatus: raw.status ?? "",
-    services: services.map((bs: any) => bs.service || {}),
-  };
+    editingStatus: raw.status,
+    services: services.map((s: any) => s.service)
+  }
 }
 
-// 🪟 เมื่อผู้ใช้คลิกที่แถวของรายการจอง จะเปิด modal รายละเอียดการจอง
+/* ----------------- ACTIONS ------------------ */
 function openDetailModal(booking: Booking) {
-  selectedBooking.value = booking;
-  showDetailModal.value = true;
+  selectedBooking.value = booking
+  showDetailModal.value = true
 }
 
-// ❌ ปิด modal รายละเอียด
 function closeDetailModal() {
-  showDetailModal.value = false;
-  selectedBooking.value = null;
+  showDetailModal.value = false
 }
 
-// 🔽 เปิด/ปิด dropdown เปลี่ยนสถานะของการจองแต่ละรายการ
 function toggleDropdown(id: number) {
-  openDropdown.value = openDropdown.value === id ? null : id;
+  openDropdown.value = openDropdown.value === id ? null : id
 }
 
-// 🔤 แปลงรหัสสถานะเป็นข้อความภาษาไทย
 function displayStatus(status: string) {
   return status === "pending"
     ? "รออนุมัติ"
     : status === "confirmed"
     ? "ยืนยันแล้ว"
-    : "รอยืนยัน";
+    : "รออนุมัติ"
 }
 
-// 🎨 กำหนด class สีของ badge สถานะ ตามค่าที่ได้
 function statusColor(status: string) {
-  return status === "pending"
-    ? "status-pending"
-    : status === "confirmed"
-    ? "status-confirmed"
-    : "status-pending";
+  return status === "confirmed" ? "status-confirmed" : "status-pending"
 }
 
-// 🗑️ ลบการจองเมื่อผู้ใช้กดปุ่มถังขยะ โดยส่งคำขอลบไปยัง backend แล้วลบจากรายการ
-async function deleteBooking(id: number) {
-  if (!confirm("คุณแน่ใจว่าต้องลบการจองนี้หรือไม่?")) return;
-
-  const token = localStorage.getItem("authToken");
-  const res = await fetch(`http://localhost:3000/bookings/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!res.ok) return alert("ลบไม่สำเร็จ");
-  bookings.value = bookings.value.filter((b) => b.id !== id);
-  alert("ลบการจองแล้ว");
-}
-
-// ✅ ฟังก์ชันเมื่อผู้ใช้เลือกเปลี่ยนสถานะรายการ (รออนุมัติ → ยืนยันแล้ว ฯลฯ)
-// อัปเดตสถานะใน frontend และเรียก updateBookingStatus เพื่ออัปเดต backend
 function selectStatus(booking: Booking, status: string) {
-  booking.editingStatus = status;
-  booking.status = status;
-  openDropdown.value = null;
-  updateBookingStatus(booking.id, status);
+  booking.editingStatus = status
+  updateStatus(booking.id, status)
 }
 
-// 🔄 ส่งคำขอ PATCH ไป backend เพื่ออัปเดตสถานะของรายการนั้น
-async function updateBookingStatus(id: number, status: string) {
-  const token = localStorage.getItem("authToken");
-
+async function updateStatus(id: number, status: string) {
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`
     },
-    body: JSON.stringify({ status }),
-  });
+    body: JSON.stringify({ status })
+  })
 
   if (res.ok) {
-    showPopup.value = true; // แสดง popup แจ้งเตือนว่าทำสำเร็จ
-    setTimeout(() => {
-      showPopup.value = false;
-    }, 3000);
-    await fetchBookings(); // โหลดข้อมูลใหม่อีกรอบเพื่อให้แสดงผลถูกต้อง
+    showPopup.value = true
+    setTimeout(() => (showPopup.value = false), 2500)
+    await fetchBookings()
+  }
+}
+
+async function deleteBooking(id: number) {
+  if (!confirm("ต้องการลบการจองนี้หรือไม่?")) return
+
+  const res = await fetch(`http://localhost:3000/bookings/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`
+    }
+  })
+
+  if (res.ok) {
+    bookings.value = bookings.value.filter((b) => b.id !== id)
+    alert("ลบสำเร็จ")
   }
 }
 </script>

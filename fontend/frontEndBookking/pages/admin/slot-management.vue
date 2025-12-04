@@ -2,38 +2,26 @@
   <div class="container">
     <h2 class="page-title">🛠️ จัดการ Slot ร้าน</h2>
 
+    <!-- ส่วนกำหนดจำนวน Slot -->
     <div class="input-bar">
-      <label for="slotCount">จำนวน Slot ที่ต้องการ:</label>
+      <label>จำนวน Slot ที่ต้องการ:</label>
+
       <div class="input-control-wrapper">
         <button class="counter-btn b1" @click="decreaseSlot">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="lucide lucide-minus"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M5 12h14" />
-          </svg>
+          <i class="lucide lucide-minus">-</i>
         </button>
 
         <input type="text" :value="slotCount" readonly class="counter-input" />
 
         <button class="counter-btn b2" @click="increaseSlot">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="lucide lucide-plus"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <i class="lucide lucide-plus">+</i>
         </button>
       </div>
+
       <button @click="generateSlots" class="btn-add">➕ สร้าง Slot</button>
     </div>
 
+    <!-- รายการ slot ที่สร้าง -->
     <div v-for="(slot, index) in slots" :key="index" class="slot-group">
       <div class="slot-inputs">
         <div class="form-control">
@@ -41,9 +29,9 @@
           <input
             type="date"
             :id="'date-' + index"
-            v-model="slots[index].date"
-            required
+            v-model="slot.date"
             class="form-input"
+            required
           />
         </div>
 
@@ -52,9 +40,9 @@
           <input
             type="time"
             :id="'start-' + index"
-            v-model="slots[index].startTime"
-            required
+            v-model="slot.startTime"
             class="form-input"
+            required
           />
         </div>
 
@@ -63,9 +51,9 @@
           <input
             type="time"
             :id="'end-' + index"
-            v-model="slots[index].endTime"
-            required
+            v-model="slot.endTime"
             class="form-input"
+            required
           />
         </div>
 
@@ -74,9 +62,9 @@
           <input
             type="text"
             :id="'name-' + index"
-            v-model="slots[index].slotName"
-            required
+            v-model="slot.slotName"
             class="form-input"
+            required
           />
         </div>
 
@@ -84,9 +72,9 @@
           <label :for="'status-' + index">สถานะ</label>
           <select
             :id="'status-' + index"
-            v-model="slots[index].status"
-            required
+            v-model="slot.status"
             class="form-input"
+            required
           >
             <option value="AVAILABLE">Available</option>
             <option value="BOOKED">Booked</option>
@@ -94,49 +82,63 @@
         </div>
       </div>
 
-      <button class="btn-remove" @click="removeSlot(index)">ลบ</button>
+      <button class="btn-remove" @click="removeSlot(index)">
+        ลบ
+      </button>
     </div>
 
     <button class="btn-save" @click="saveSlots">💾 บันทึก Slot</button>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-
+<script setup lang="ts">
 definePageMeta({ layout: "admin" });
 
-const slotCount = ref(1);
-const slots = ref([]);
+import { ref } from "vue";
 
+/* ------------------ TYPE ------------------ */
+interface SlotItem {
+  date: string;
+  startTime: string;
+  endTime: string;
+  slotName: string;
+  status: "AVAILABLE" | "BOOKED";
+}
+
+/* ------------------ STATE ------------------ */
+const slotCount = ref<number>(1);
+const slots = ref<SlotItem[]>([]);
+
+/* ------------------ AUTH ------------------ */
 function getAuthHeaders() {
-  const token =
-    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 }
 
+/* ------------------ HELPERS ------------------ */
 function getTodayDateString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
 }
 
+/* ------------------ GENERATE ------------------ */
 function generateSlots() {
-  const todayStr = getTodayDateString();
-  slots.value = Array.from({ length: slotCount.value }, (_, index) => ({
-    date: todayStr,
+  const today = getTodayDateString();
+  slots.value = Array.from({ length: slotCount.value }, (_, i) => ({
+    date: today,
     startTime: "09:00",
     endTime: "16:00",
-    slotName: `Slot ${index + 1}`,
+    slotName: `Slot ${i + 1}`,
     status: "AVAILABLE",
   }));
 }
 
+/* ------------------ SLOT COUNTER ------------------ */
 function increaseSlot() {
   slotCount.value++;
 }
@@ -145,75 +147,53 @@ function decreaseSlot() {
   if (slotCount.value > 1) slotCount.value--;
 }
 
-function removeSlot(index) {
+/* ------------------ REMOVE ------------------ */
+function removeSlot(index: number) {
   slots.value.splice(index, 1);
 }
 
+/* ------------------ SAVE ------------------ */
 async function saveSlots() {
-  if (!slots.value.length) {
-    alert("กรุณาสร้าง Slot ก่อนบันทึก");
-    return;
+  if (slots.value.length === 0) {
+    return alert("กรุณาสร้าง Slot ก่อนบันทึก");
   }
 
   for (const slot of slots.value) {
-    if (
-      !slot.date ||
-      !slot.startTime ||
-      !slot.endTime ||
-      !slot.slotName ||
-      !slot.status
-    ) {
-      alert(
-        `กรุณากรอกข้อมูลให้ครบถ้วนสำหรับ Slot "${slot.slotName || "Unnamed"}"`
-      );
+    if (!slot.date || !slot.startTime || !slot.endTime || !slot.slotName) {
+      alert(`ข้อมูลไม่ครบถ้วนใน Slot "${slot.slotName}"`);
       return;
     }
 
-    const start = new Date(`${slot.date}T${slot.startTime}:00+08:00`);
-    const end = new Date(`${slot.date}T${slot.endTime}:00+08:00`);
-    if (start >= end) {
-      alert(`Slot "${slot.slotName}": เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด`);
+    if (slot.startTime >= slot.endTime) {
+      alert(`Slot "${slot.slotName}" เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด`);
       return;
     }
-
-    const payload = {
-      slotName: slot.slotName,
-      date: slot.date,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      status: slot.status,
-    };
 
     try {
       const res = await fetch("http://localhost:3000/slots", {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
+        body: JSON.stringify(slot),
       });
 
-      // ✅ ตรวจสอบ token หมดอายุ
       if (res.status === 401) {
         localStorage.removeItem("authToken");
         alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
-        window.location.href = "/login"; // หรือใช้ navigateTo("/login") ถ้าใช้ Nuxt
-        return;
+        return navigateTo("/login");
       }
 
-      const responseData = await res.json();
+      const result = await res.json();
       if (!res.ok) {
-        throw new Error(
-          `ไม่สามารถบันทึก slot: ${responseData.error || "ข้อมูลไม่ถูกต้อง"}`
-        );
+        throw new Error(result.error || "ไม่สามารถบันทึกข้อมูล Slot");
       }
-    } catch (err) {
+    } catch (err: any) {
       alert(err.message);
       return;
     }
   }
 
-  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว");
+  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว 🎉");
 }
-
 </script>
 
 <style scoped>

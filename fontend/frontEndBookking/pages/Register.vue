@@ -43,73 +43,85 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// ไม่ใช้ layout user เพราะเป็นหน้า public
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
-const logoUrl = ref('')
+const logoUrl = ref("");
+
 onMounted(() => {
-  logoUrl.value = '/images/logo.jpg'
-})
+  logoUrl.value = "/images/logo.jpg";
+});
 
-const name = ref('')
-const email = ref('')
-const password = ref('')
-const phone = ref('')
-const error = ref('')
-const success = ref('')
-const glowX = ref(0)
-const glowY = ref(0)
-const router = useRouter()
+const name = ref("");
+const email = ref("");
+const password = ref("");
+const phone = ref("");
+const error = ref("");
+const success = ref("");
+const glowX = ref(0);
+const glowY = ref(0);
+const router = useRouter();
 
 function handleMouseMove(e: MouseEvent) {
-  glowX.value = e.clientX
-  glowY.value = e.clientY
+  glowX.value = e.clientX;
+  glowY.value = e.clientY;
 }
 
 const glowStyle = computed(() => ({
   left: `${glowX.value - 150}px`,
   top: `${glowY.value - 150}px`,
-}))
+}));
 
 async function handleRegister() {
   try {
-    const registerRes = await fetch('http://localhost:3000/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const registerRes = await fetch("http://localhost:3000/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         uName: name.value,
         email: email.value,
         password: password.value,
-        ...(phone.value.trim() !== '' && { phone: phone.value }),
+        ...(phone.value.trim() !== "" && { phone: phone.value }),
       }),
-    })
-    const registerData = await registerRes.json()
-    if (!registerRes.ok) throw new Error(registerData.message || 'สมัครสมาชิกไม่สำเร็จ')
+    });
 
-    const loginRes = await fetch('http://localhost:3000/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
-    })
-    const loginData = await loginRes.json()
-    if (!loginRes.ok) throw new Error(loginData.message || 'เข้าสู่ระบบอัตโนมัติไม่สำเร็จ')
+    const registerData = await registerRes.json();
+    if (!registerRes.ok) throw new Error(registerData.message || "สมัครสมาชิกไม่สำเร็จ");
 
-    localStorage.setItem('token', loginData.data.token)
-    localStorage.setItem('userData', JSON.stringify({
-      name: loginData.data.name,
-      email: loginData.data.email,
-      role: loginData.data.role,
-    }))
+    const loginRes = await fetch("http://localhost:3000/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      }),
+    });
 
-    router.push('/')
+    const loginData = await loginRes.json();
+    if (!loginRes.ok) throw new Error(loginData.message || "เข้าสู่ระบบอัตโนมัติไม่สำเร็จ");
+
+    localStorage.setItem("authToken", loginData.data.token);
+
+    localStorage.setItem(
+      "userData",
+      JSON.stringify({
+        name: loginData.data.name,
+        email: loginData.data.email,
+        role: loginData.data.role,
+      })
+    );
+
+    router.push("/");
+
   } catch (err: any) {
-    error.value = err.message
-    success.value = ''
+    error.value = err.message;
+    success.value = "";
   }
 }
 
 function goToLogin() {
-  router.push('/')
+  router.push("/");
 }
 </script>
 

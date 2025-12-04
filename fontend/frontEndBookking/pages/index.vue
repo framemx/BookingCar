@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+// ไม่ต้องใช้ definePageMeta เพราะเป็นหน้า public
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -81,36 +82,35 @@ async function handleLogin() {
     const res = await fetch("http://localhost:3000/users/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Login failed");
 
-    // บันทึกโทเคนและข้อมูลผู้ใช้
-    localStorage.setItem(
-      "userData",
+    // เก็บข้อมูลใน localStorage
+    localStorage.setItem("userData", JSON.stringify({
+      id: data.data.id,
+      name: data.data.uName,
+      email: data.data.email,
+      phone: data.data.phone || "",
+      profilePicture: data.data.profilePicture || "👤",
+      role: data.data.role,
+      token: data.data.token,
+    }));
 
-      JSON.stringify({
-        id: data.data.id,
-        name: data.data.uName,
-        email: data.data.email,
-        phone: data.data.phone || "",
-        profilePicture: data.data.profilePicture || "👤",
-        role: data.data.role,
-        token: data.data.token, // ✅ เพิ่มตรงนี้เข้าไป!
-      })
-    );
-
-    // ✅ เพิ่มอันนี้!
     localStorage.setItem("authToken", data.data.token);
 
-    // เปลี่ยนเส้นทางตามบทบาท
+    // redirect ตาม role
     if (data.data.role === "ADMIN") {
       router.push("/admin/dashboard");
     } else {
-      router.push("/user/home"); // เปลี่ยนไปหน้าแรกของผู้ใช้ทั่วไป
+      router.push("/user/home");
     }
+
   } catch (err: any) {
     error.value = "ไม่สามารถเข้าสู่ระบบได้: บทบาทไม่ถูกต้อง";
   }

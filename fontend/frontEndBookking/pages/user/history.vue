@@ -3,6 +3,7 @@
     <div class="content-wrapper">
       <h1 class="page-title">📜 ประวัติการจอง</h1>
 
+      <!-- DATE FILTER -->
       <div class="date-filter-bar">
         <label class="date-label" for="datePicker">
           <span class="calendar-icon">📅</span> เลือกวันที่:
@@ -16,6 +17,7 @@
         <button class="back-button" @click="goBack">⬅ กลับไปหน้าการจอง</button>
       </div>
 
+      <!-- BOOKING TABLE -->
       <table v-if="displayedBookings.length > 0" class="slot-table">
         <thead>
           <tr>
@@ -32,7 +34,7 @@
             <td>{{ formatDateDisplay(booking.bookingDate) }}</td>
             <td>{{ booking.start }}</td>
             <td>{{ booking.end }}</td>
-            <td>{{ booking.duration }} นาที</td>
+            <td>{{ formatDuration(booking.duration) }}</td>
             <td>
               <ul class="service-list">
                 <li v-for="bs in booking.bookingServices" :key="bs.service.id">
@@ -41,8 +43,18 @@
               </ul>
             </td>
             <td>
-              <span :class="booking.status.toUpperCase() === 'CONFIRMED' ? 'status-confirmed' : 'status-pending'">
-                {{ booking.status.toUpperCase() === 'CONFIRMED' ? 'ยืนยันแล้ว' : 'รออนุมัติ' }}
+              <span
+                :class="
+                  booking.status.toUpperCase() === 'CONFIRMED'
+                    ? 'status-confirmed'
+                    : 'status-pending'
+                "
+              >
+                {{
+                  booking.status.toUpperCase() === 'CONFIRMED'
+                    ? 'ยืนยันแล้ว'
+                    : 'รออนุมัติ'
+                }}
               </span>
             </td>
           </tr>
@@ -54,83 +66,107 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue"
+import { useRouter } from "#app"
 
-definePageMeta({ layout: "user" });
+definePageMeta({ layout: "user" })
 
-const router = useRouter();
-const selectedDate = ref("");
-const allBookings = ref([]);
+const router = useRouter()
+
+const selectedDate = ref("")
+const allBookings = ref<any[]>([])
+
+/* ------------------- HELPERS ------------------- */
+
+function getHeaders(): HeadersInit {
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+  const token = userData.token || localStorage.getItem("authToken")
+
+  return token
+    ? {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    : { "Content-Type": "application/json" }
+}
 
 function goBack() {
-  router.push('/user/bookingWelcome');
+  router.push("/user/booking-welcome")
 }
 
-function formatDateDisplay(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('th-TH', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+function formatDuration(min: number) {
+  if (min < 60) return `${min} นาที`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m === 0 ? `${h} ชม.` : `${h} ชม. ${m} นาที`
 }
 
-function parseTimeRange(booking) {
-  const startTimes = booking.bookingSlots.map(bs => new Date(bs.startTime));
-  const minStart = new Date(Math.min(...startTimes.map(d => d.getTime())));
-  const totalDuration = booking.bookingServices?.reduce(
-    (sum, bs) => sum + (bs.service?.durationMinutes || 0),
-    0
-  ) || 0;
-  const endTime = new Date(minStart.getTime() + totalDuration * 60000);
+function formatDateDisplay(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  })
+}
+
+/* ------------------- TIME PARSING ------------------- */
+
+function parseTimeRange(booking: any) {
+  const startTimes = booking.bookingSlots.map((bs: any) => new Date(bs.startTime))
+  const minStart = new Date(Math.min(...startTimes.map((d: Date) => d.getTime())))
+
+  const totalDuration =
+    booking.bookingServices?.reduce(
+      (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
+      0
+    ) || 0
+
+  const endTime = new Date(minStart.getTime() + totalDuration * 60000)
 
   return {
-    start: minStart.toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
-    end: endTime.toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
+    start: minStart.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+    end: endTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
     duration: totalDuration
-  };
+  }
 }
 
+/* ------------------- COMPUTED ------------------- */
+
 const displayedBookings = computed(() => {
-  const enriched = allBookings.value.map(b => ({ ...b, ...parseTimeRange(b) }));
-  if (!selectedDate.value) return enriched;
-  return enriched.filter(b => b.bookingDate.slice(0, 10) === selectedDate.value);
-});
+  const enriched = allBookings.value.map((b) => ({
+    ...b,
+    ...parseTimeRange(b)
+  }))
+
+  if (!selectedDate.value) return enriched
+
+  return enriched.filter(
+    (b) => b.bookingDate.slice(0, 10) === selectedDate.value
+  )
+})
+
+/* ------------------- FETCH BOOKINGS ------------------- */
 
 onMounted(async () => {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-  const token = userData.token;
-  const userEmail = userData.email;
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}")
+  const userEmail = userData.email
 
-  if (!token || !userEmail) {
-    router.push("/");
-    return;
+  if (!userEmail) {
+    router.push("/")
+    return
   }
 
-  const res = await fetch(`http://localhost:3000/bookings?userEmail=${userEmail}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const res = await fetch(
+    `http://localhost:3000/bookings?userEmail=${userEmail}`,
+    { headers: getHeaders() }
+  )
 
-  const data = await res.json();
-  allBookings.value = Array.isArray(data) ? data : [];
-});
-
-
-
-
-
+  const data = await res.json()
+  allBookings.value = Array.isArray(data) ? data : []
+})
 </script>
 
 <style scoped>

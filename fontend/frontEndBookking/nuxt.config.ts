@@ -19,7 +19,5 @@ export default defineNuxtConfig({
     port: 4000,
   },
 
-  router: {
-    middleware: 'auth',
-  },
+ 
 });

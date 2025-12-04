@@ -2,12 +2,12 @@
   <div class="content-wrapper">
     <h1 class="page-title">🛠️ จัดการบริการ</h1>
 
+    <!-- ปุ่มเพิ่มบริการ -->
     <div class="action-bar">
-      <button @click="showAddModal = true" class="btn-add">
-        ➕ เพิ่มบริการ
-      </button>
+      <button @click="showAddModal = true" class="btn-add">➕ เพิ่มบริการ</button>
     </div>
 
+    <!-- ตารางบริการ -->
     <div class="table-wrapper">
       <table class="booking-table">
         <thead>
@@ -19,19 +19,17 @@
             <th>จัดการ</th>
           </tr>
         </thead>
+
         <tbody>
           <tr v-for="service in services" :key="service.id">
             <td>{{ service.sName }}</td>
             <td>{{ service.description }}</td>
             <td>{{ service.price }}</td>
             <td>{{ service.durationMinutes }}</td>
+
             <td class="actions">
-              <button class="btn-edit" @click="openEditModal(service)">
-                แก้ไข
-              </button>
-              <button class="btn-delete" @click="confirmDelete(service)">
-                ลบ
-              </button>
+              <button class="btn-edit" @click="openEditModal(service)">แก้ไข</button>
+              <button class="btn-delete" @click="confirmDelete(service)">ลบ</button>
             </td>
           </tr>
         </tbody>
@@ -40,120 +38,94 @@
 
     <!-- Modal เพิ่มบริการ -->
     <teleport to="body">
-      <div
-        v-if="showAddModal"
-        class="modal-overlay"
-        @click.self="closeAddModal"
-      >
+      <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
         <div class="modal">
           <h2>เพิ่มบริการใหม่</h2>
+
           <form @submit.prevent="submitNewService">
             <div>
-              <label for="sName">ชื่อบริการ</label>
-              <input v-model="newService.sName" id="sName" required />
+              <label>ชื่อบริการ</label>
+              <input v-model="newService.sName" required />
             </div>
+
             <div>
-              <label for="description">รายละเอียด</label>
-              <textarea
-                v-model="newService.description"
-                id="description"
-                required
-              ></textarea>
+              <label>รายละเอียด</label>
+              <textarea v-model="newService.description" required></textarea>
             </div>
+
             <div>
-              <label for="price">ราคา (บาท)</label>
+              <label>ราคา (บาท)</label>
+              <input type="number" min="0" v-model.number="newService.price" required />
+            </div>
+
+            <div>
+              <label>ระยะเวลา (นาที)</label>
               <input
-                v-model.number="newService.price"
-                id="price"
-                type="number"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label for="durationMinutes">ระยะเวลา (นาที)</label>
-              <input
-                v-model.number="newService.durationMinutes"
-                id="durationMinutes"
                 type="number"
                 min="1"
+                v-model.number="newService.durationMinutes"
                 required
               />
             </div>
+
             <div class="modal-footer">
-              <button type="submit" class="btn-submit">บันทึก</button>
-              <button type="button" @click="closeAddModal" class="btn-cancel">
-                ยกเลิก
-              </button>
+              <button class="btn-submit" type="submit">บันทึก</button>
+              <button class="btn-cancel" type="button" @click="closeAddModal">ยกเลิก</button>
             </div>
           </form>
         </div>
       </div>
     </teleport>
 
-    <!-- Modal แก้ไขบริการ -->
+    <!-- Modal แก้ไข -->
     <teleport to="body">
-      <div
-        v-if="showEditModal"
-        class="modal-overlay"
-        @click.self="closeEditModal"
-      >
+      <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
         <div class="modal">
           <h2>แก้ไขบริการ</h2>
+
           <form @submit.prevent="submitEditService">
             <div>
-              <label for="editSName">ชื่อบริการ</label>
-              <input v-model="editServiceData.sName" id="editSName" required />
+              <label>ชื่อบริการ</label>
+              <input v-model="editServiceData.sName" required />
             </div>
+
             <div>
-              <label for="editDescription">รายละเอียด</label>
-              <textarea
-                v-model="editServiceData.description"
-                id="editDescription"
-                required
-              ></textarea>
+              <label>รายละเอียด</label>
+              <textarea v-model="editServiceData.description" required></textarea>
             </div>
+
             <div>
-              <label for="editPrice">ราคา (บาท)</label>
+              <label>ราคา (บาท)</label>
+              <input type="number" min="0" v-model.number="editServiceData.price" required />
+            </div>
+
+            <div>
+              <label>ระยะเวลา (นาที)</label>
               <input
-                v-model.number="editServiceData.price"
-                id="editPrice"
-                type="number"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label for="editDurationMinutes">ระยะเวลา (นาที)</label>
-              <input
-                v-model.number="editServiceData.durationMinutes"
-                id="editDurationMinutes"
                 type="number"
                 min="1"
+                v-model.number="editServiceData.durationMinutes"
                 required
               />
             </div>
+
             <div class="modal-footer">
-              <button type="submit" class="btn-submit">บันทึก</button>
-              <button type="button" @click="closeEditModal" class="btn-cancel">
-                ยกเลิก
-              </button>
+              <button class="btn-submit" type="submit">บันทึก</button>
+              <button class="btn-cancel" type="button" @click="closeEditModal">ยกเลิก</button>
             </div>
           </form>
         </div>
       </div>
     </teleport>
 
-    <!-- Modal ยืนยันลบ -->
+    <!-- Modal ลบ -->
     <teleport to="body">
-      <div
-        v-if="showDeleteModal"
-        class="modal-overlay"
-        @click.self="cancelDelete"
-      >
+      <div v-if="showDeleteModal" class="modal-overlay" @click.self="cancelDelete">
         <div class="modal">
           <h3>ยืนยันการลบ</h3>
-          <p>คุณต้องการลบบริการ "{{ serviceToDelete?.sName }}" หรือไม่?</p>
+
+          <p>คุณต้องการลบบริการ "{{ serviceToDelete?.sName }}" ใช่หรือไม่?</p>
+
           <div class="modal-footer">
             <button class="btn-delete" @click="deleteService">ใช่</button>
             <button class="btn-cancel" @click="cancelDelete">ไม่</button>
@@ -165,189 +137,155 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: "admin" }); // กำหนด layout สำหรับหน้านี้ให้ใช้ layout admin
+definePageMeta({ layout: "admin" })
 
-import { ref, reactive, onMounted } from "vue"; // นำเข้าฟังก์ชันจาก Vue
+import { ref, reactive, onMounted } from "vue"
 
-//-----------------------------------------
-// 1. ตรวจสอบว่า token หมดอายุหรือไม่
-//-----------------------------------------
-function handleUnauthorized() {
-  localStorage.removeItem("authToken");
-  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
-  navigateTo("/login"); // เปลี่ยนหน้าไป login
-}
-
-//-----------------------------------------
-// 2. ฟังก์ชันใช้สร้าง header สำหรับเรียก API
-//-----------------------------------------
-function getAuthHeaders() {
-  const token =
-    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-}
-
-//-----------------------------------------
-// 3. ประกาศ interface สำหรับข้อมูลบริการ (Service)
-//-----------------------------------------
 interface Service {
-  id: number;
-  sName: string;
-  description: string;
-  price: number;
-  durationMinutes: number;
+  id: number
+  sName: string
+  description: string
+  price: number
+  durationMinutes: number
 }
 
-//-----------------------------------------
-// 4. ตัวแปรเก็บข้อมูลบริการทั้งหมดที่ดึงจาก API
-//-----------------------------------------
-const services = ref<Service[]>([]);
+/* ---------------- STATE ---------------- */
+const services = ref<Service[]>([])
 
-//-----------------------------------------
-// 5. ตัวแปรใช้ควบคุม Modal "เพิ่มบริการใหม่"
-//-----------------------------------------
-const showAddModal = ref(false);
+const showAddModal = ref(false)
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
+
+const serviceToDelete = ref<Service | null>(null)
+
 const newService = reactive({
   sName: "",
   description: "",
   price: 0,
-  durationMinutes: 0,
-});
+  durationMinutes: 1
+})
 
-// ปิด Modal และ reset ฟอร์ม
-function closeAddModal() {
-  showAddModal.value = false;
-  Object.assign(newService, {
-    sName: "",
-    description: "",
-    price: 0,
-    durationMinutes: 0,
-  });
-}
-
-// กดบันทึก "เพิ่มบริการ" → ส่ง POST ไปหลังบ้าน
-async function submitNewService() {
-  const res = await fetch("http://localhost:3000/services", {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(newService),
-  });
-
-  if (res.status === 401) return handleUnauthorized();
-  if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ");
-
-  await fetchServices(); // อัปเดตตาราง
-  closeAddModal(); // ปิด modal
-}
-
-//-----------------------------------------
-// 6. Modal "แก้ไขบริการ"
-//-----------------------------------------
-const showEditModal = ref(false);
 const editServiceData = reactive<Service>({
   id: 0,
   sName: "",
   description: "",
   price: 0,
-  durationMinutes: 0,
-});
+  durationMinutes: 1
+})
 
-// เปิด Modal พร้อมกรอกข้อมูลจากรายการที่เลือก
+/* ---------------- AUTH ---------------- */
+function getAuthHeaders() {
+  const token = localStorage.getItem("authToken")
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` })
+  }
+}
+
+function handleUnauthorized() {
+  localStorage.removeItem("authToken")
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
+  navigateTo("/login")
+}
+
+/* ---------------- CRUD ---------------- */
+async function fetchServices() {
+  const res = await fetch("http://localhost:3000/services", {
+    headers: getAuthHeaders()
+  })
+
+  if (res.status === 401) return handleUnauthorized()
+
+  const data = await res.json()
+  services.value = data.data || []
+}
+
+/* CREATE */
+async function submitNewService() {
+  const res = await fetch("http://localhost:3000/services", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(newService)
+  })
+
+  if (!res.ok) return alert("เพิ่มบริการไม่สำเร็จ")
+
+  closeAddModal()
+  fetchServices()
+}
+
+function closeAddModal() {
+  showAddModal.value = false
+  Object.assign(newService, {
+    sName: "",
+    description: "",
+    price: 0,
+    durationMinutes: 1
+  })
+}
+
+/* UPDATE */
 function openEditModal(service: Service) {
-  Object.assign(editServiceData, service); // คัดลอกข้อมูลเข้า modal
-  showEditModal.value = true;
+  Object.assign(editServiceData, service)
+  showEditModal.value = true
 }
 
 function closeEditModal() {
-  showEditModal.value = false;
+  showEditModal.value = false
 }
 
-// ส่ง PUT เพื่ออัปเดตบริการในระบบ
 async function submitEditService() {
   const res = await fetch(
     `http://localhost:3000/services/${editServiceData.id}`,
     {
       method: "PUT",
       headers: getAuthHeaders(),
-      body: JSON.stringify(editServiceData),
+      body: JSON.stringify(editServiceData)
     }
-  );
+  )
 
-  if (res.status === 401) return handleUnauthorized();
-  if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ");
+  if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ")
 
-  await fetchServices(); // โหลดรายการบริการใหม่
-  closeEditModal();
+  closeEditModal()
+  fetchServices()
 }
 
-//-----------------------------------------
-// 7. Modal "ลบบริการ"
-//-----------------------------------------
-const showDeleteModal = ref(false);
-const serviceToDelete = ref<Service | null>(null);
-
-// เปิด Modal เพื่อยืนยันการลบ
+/* DELETE */
 function confirmDelete(service: Service) {
-  serviceToDelete.value = service;
-  showDeleteModal.value = true;
+  serviceToDelete.value = service
+  showDeleteModal.value = true
 }
 
-// ปิด modal ยืนยันลบ
 function cancelDelete() {
-  showDeleteModal.value = false;
-  serviceToDelete.value = null;
+  showDeleteModal.value = false
+  serviceToDelete.value = null
 }
 
-// ลบบริการที่เลือก
 async function deleteService() {
-  if (!serviceToDelete.value) return;
+  if (!serviceToDelete.value) return
 
   const res = await fetch(
     `http://localhost:3000/services/${serviceToDelete.value.id}`,
     {
       method: "DELETE",
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders()
     }
-  );
+  )
 
-  if (res.status === 401) return handleUnauthorized();
-  if (!res.ok) return alert("ลบบริการไม่สำเร็จ");
+  if (!res.ok) return alert("ลบบริการไม่สำเร็จ")
 
-  await fetchServices(); // โหลดรายการบริการใหม่หลังลบ
-  cancelDelete();
+  cancelDelete()
+  fetchServices()
 }
 
-//-----------------------------------------
-// 8. ดึงบริการทั้งหมดจาก API (ใช้ทุกครั้งที่เพิ่ม/ลบ/แก้ไขเสร็จ)
-//-----------------------------------------
-async function fetchServices() {
-  const res = await fetch("http://localhost:3000/services", {
-    headers: getAuthHeaders(),
-  });
-
-  if (res.status === 401) return handleUnauthorized();
-
-  const data = await res.json();
-  services.value = data.data || [];
-}
-
-//-----------------------------------------
-// 9. เรียกฟังก์ชัน fetchServices เมื่อ component โหลดครั้งแรก
-//-----------------------------------------
 onMounted(() => {
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    navigateTo("/");
-    return;
-  }
-  fetchServices(); // ดึงบริการมาแสดงในตาราง
-});
+  const token = localStorage.getItem("authToken")
+  if (!token) return navigateTo("/login")
 
+  fetchServices()
+})
 </script>
+
 
 
 <style scoped>

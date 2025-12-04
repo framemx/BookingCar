@@ -2,49 +2,54 @@
   <div class="container">
     <h2 class="page-title">📦 รายการ Slot ทั้งหมด</h2>
 
+    <!-- ปุ่มจัดการ Slot -->
     <div class="action-bar">
       <button class="btn-add" @click="goToSlotManagement">
         ➕ จัดการ Slot
       </button>
     </div>
 
+    <!-- ฟิลเตอร์วันที่ -->
     <div class="filter-bar">
-      <label for="filterDate" class="filter-label">
+      <label class="filter-label">
         <i class="i-lucide-calendar"></i>
         เลือกวันที่:
       </label>
+
       <div class="date-picker-wrapper">
         <i class="i-lucide-calendar"></i>
         <input
           type="date"
-          id="filterDate"
           v-model="selectedDate"
           class="custom-date-input"
         />
       </div>
-      <button v-if="selectedDate" @click="clearDateFilter">ล้างตัวกรอง</button>
+
+      <button v-if="selectedDate" @click="clearDateFilter">
+        ล้างตัวกรอง
+      </button>
     </div>
 
+    <!-- Loading -->
     <div v-if="loading" class="loading">กำลังโหลดข้อมูล...</div>
+
+    <!-- ไม่มีข้อมูล -->
     <div v-else-if="filteredSlots.length === 0" class="empty">
       ไม่มีข้อมูล Slot สำหรับวันที่เลือก
     </div>
 
+    <!-- รายการ Slot -->
     <div v-else class="slot-list">
-      <div
-        v-for="(slot, index) in filteredSlots"
-        :key="slot.id"
-        class="slot-item"
-      >
+      <div v-for="slot in filteredSlots" :key="slot.id" class="slot-item">
         <p><strong>ชื่อ Slot:</strong> {{ slot.slotName || "ไม่มีชื่อ" }}</p>
-        <p><strong>วันที่:</strong> {{ slot.date || "ไม่มีวันที่" }}</p>
+        <p><strong>วันที่:</strong> {{ slot.date }}</p>
         <p><strong>เวลาเริ่ม:</strong> {{ formatTime(slot.startTime) }}</p>
         <p><strong>เวลาสิ้นสุด:</strong> {{ formatTime(slot.endTime) }}</p>
 
         <p>
           <strong>สถานะ:</strong>
           <span :class="slot.status === 'AVAILABLE' ? 'available' : 'booked'">
-            {{ slot.status || "ไม่ระบุสถานะ" }}
+            {{ slot.status }}
           </span>
         </p>
 
@@ -55,41 +60,34 @@
       </div>
     </div>
 
+    <!-- Dialog แก้ไข -->
     <dialog ref="editDialog" class="edit-dialog">
       <form @submit.prevent="saveEdit">
         <h3>แก้ไขข้อมูล Slot</h3>
 
-        <label
-          >ชื่อ Slot:<input
-            type="text"
-            v-model="editSlotData.slotName"
-            required
-            class="form-input"
-        /></label>
-        <label
-          >วันที่:<input
-            type="date"
-            v-model="editSlotData.date"
-            required
-            class="form-input"
-        /></label>
-        <label
-          >เวลาเริ่ม:<input
-            type="time"
-            v-model="editSlotData.startTime"
-            required
-            class="form-input"
-        /></label>
-        <label
-          >เวลาสิ้นสุด:<input
-            type="time"
-            v-model="editSlotData.endTime"
-            required
-            class="form-input"
-        /></label>
+        <label>
+          ชื่อ Slot:
+          <input type="text" v-model="editSlotData.slotName" required class="form-input" />
+        </label>
+
+        <label>
+          วันที่:
+          <input type="date" v-model="editSlotData.date" required class="form-input" />
+        </label>
+
+        <label>
+          เวลาเริ่ม:
+          <input type="time" v-model="editSlotData.startTime" required class="form-input" />
+        </label>
+
+        <label>
+          เวลาสิ้นสุด:
+          <input type="time" v-model="editSlotData.endTime" required class="form-input" />
+        </label>
+
         <label>
           สถานะ:
-          <select v-model="editSlotData.status" required class="form-input">
+          <select v-model="editSlotData.status" class="form-input">
             <option value="AVAILABLE">AVAILABLE</option>
             <option value="BOOKED">BOOKED</option>
           </select>
@@ -97,157 +95,154 @@
 
         <div class="dialog-buttons">
           <button type="submit" class="btn-save">บันทึก</button>
-          <button type="button" class="btn-cancel" @click="closeEditDialog">
-            ยกเลิก
-          </button>
+          <button type="button" class="btn-cancel" @click="closeEditDialog">ยกเลิก</button>
         </div>
       </form>
     </dialog>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+<script setup lang="ts">
+import { ref, onMounted, computed } from "vue"
 
-definePageMeta({ layout: "admin" });
+// ใช้ navigateTo ของ Nuxt
+definePageMeta({ layout: "admin" })
 
-const slots = ref([]);
-const loading = ref(false);
-const router = useRouter();
+/* ---------------------- TYPE ---------------------- */
+interface Slot {
+  id: number
+  slotName: string
+  date: string
+  startTime: string
+  endTime: string
+  status: "AVAILABLE" | "BOOKED"
+}
 
-const editDialog = ref(null);
-const editSlotData = ref({
-  id: null,
+/* ---------------------- STATE ---------------------- */
+const slots = ref<Slot[]>([])
+const loading = ref(false)
+const selectedDate = ref("")
+
+const editDialog = ref<HTMLDialogElement | null>(null)
+const editSlotData = ref<Slot>({
+  id: 0,
   slotName: "",
   date: "",
   startTime: "",
   endTime: "",
   status: "AVAILABLE",
-});
+})
 
+/* ---------------------- AUTH HEADER ---------------------- */
 function getAuthHeaders() {
-  const token =
-    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken")
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
-  };
+  }
 }
 
-const selectedDate = ref("");
+/* ---------------------- FILTER SLOT ---------------------- */
 const filteredSlots = computed(() => {
-  if (!selectedDate.value) return slots.value;
-  return slots.value.filter((slot) => slot.date === selectedDate.value);
-});
+  if (!selectedDate.value) return slots.value
+  return slots.value.filter((slot) => slot.date === selectedDate.value)
+})
 
+/* ---------------------- NAVIGATION ---------------------- */
 function goToSlotManagement() {
-  router.push("/admin/slotManagement");
+  navigateTo("/admin/slot-management")
 }
 
-function openEditDialog(slot) {
-  editSlotData.value = { ...slot };
-  editDialog.value.showModal();
+/* ---------------------- FORMAT TIME ---------------------- */
+function formatTime(value: string) {
+  if (!value) return "ไม่มีเวลา"
+
+  // case: "0900" → "09:00"
+  if (value.length === 4) {
+    value = value.slice(0, 2) + ":" + value.slice(2)
+  }
+
+  return value
+}
+
+/* ---------------------- CLEAR FILTER ---------------------- */
+function clearDateFilter() {
+  selectedDate.value = ""
+}
+
+/* ---------------------- OPEN / CLOSE DIALOG ---------------------- */
+function openEditDialog(slot: Slot) {
+  editSlotData.value = { ...slot }
+  editDialog.value?.showModal()
 }
 
 function closeEditDialog() {
-  editDialog.value.close();
+  editDialog.value?.close()
 }
 
+/* ---------------------- SAVE EDIT ---------------------- */
 async function saveEdit() {
-  try {
-    const { date, startTime, endTime } = editSlotData.value;
-    if (!date || !startTime || !endTime)
-      throw new Error("กรุณากรอกวันที่และเวลาให้ครบ");
+  const payload = { ...editSlotData.value }
 
-    const start = new Date(`1970-01-01T${startTime}:00`);
-    const end = new Date(`1970-01-01T${endTime}:00`);
-    if (start >= end) throw new Error("เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด");
+  const res = await fetch(`http://localhost:3000/slots/${payload.id}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
 
-    const payload = { ...editSlotData.value };
-
-    const res = await fetch(
-      `http://localhost:3000/slots/${editSlotData.value.id}`,
-      {
-        method: "PUT",
-        headers: getAuthHeaders(), // ✅
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (!res.ok)
-      throw new Error((await res.json()).error || "แก้ไข Slot ไม่สำเร็จ");
-
-    const index = slots.value.findIndex((s) => s.id === payload.id);
-    if (index !== -1) slots.value[index] = payload;
-
-    alert("แก้ไข Slot เรียบร้อยแล้ว");
-    closeEditDialog();
-  } catch (err) {
-    alert(err.message);
+  if (!res.ok) {
+    alert("แก้ไข Slot ไม่สำเร็จ")
+    return
   }
+
+  // update local list
+  const index = slots.value.findIndex((s) => s.id === payload.id)
+  if (index !== -1) slots.value[index] = payload
+
+  alert("บันทึกสำเร็จ")
+  closeEditDialog()
 }
 
-async function deleteSlot(id) {
-  if (!confirm("คุณแน่ใจว่าต้องการลบ Slot นี้?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/slots/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(), // ✅
-    });
+/* ---------------------- DELETE SLOT ---------------------- */
+async function deleteSlot(id: number) {
+  if (!confirm("ต้องการลบ Slot นี้หรือไม่?")) return
 
-    if (!res.ok)
-      throw new Error((await res.json()).error || "ลบ Slot ไม่สำเร็จ");
-    slots.value = slots.value.filter((s) => s.id !== id);
-    alert("ลบ Slot เรียบร้อยแล้ว");
-  } catch (err) {
-    alert(err.message);
+  const res = await fetch(`http://localhost:3000/slots/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  })
+
+  if (!res.ok) {
+    alert("ลบ Slot ไม่สำเร็จ")
+    return
   }
+
+  slots.value = slots.value.filter((s) => s.id !== id)
+  alert("ลบสำเร็จ")
 }
 
+/* ---------------------- FETCH SLOTS ---------------------- */
 async function fetchSlots() {
-  loading.value = true;
-  try {
-    const res = await fetch("http://localhost:3000/slots", {
-      headers: getAuthHeaders(),
-    });
+  loading.value = true
 
-    // ✅ เพิ่มการจัดการกรณี token หมดอายุ
-    if (res.status === 401) {
-      localStorage.removeItem("authToken");
-      alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
-      navigateTo("/login");
-      return;
-    }
+  const res = await fetch("http://localhost:3000/slots", {
+    headers: getAuthHeaders(),
+  })
 
-    const data = await res.json();
-    slots.value = data;
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    loading.value = false;
+  if (res.status === 401) {
+    localStorage.removeItem("authToken")
+    return navigateTo("/login")
   }
+
+  const data = await res.json()
+
+  // backend อาจส่งเป็น { data: [...] }
+  slots.value = data.data || data
+
+  loading.value = false
 }
 
-
-function formatTime(timeString) {
-  if (!timeString) return "ไม่มีเวลา";
-  if (/^\d{4}$/.test(timeString))
-    timeString = timeString.slice(0, 2) + ":" + timeString.slice(2);
-  return new Date(
-    `1970-01-01T${timeString.length === 5 ? timeString : timeString + ":00"}`
-  ).toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
-function clearDateFilter() {
-  selectedDate.value = "";
-}
-
-onMounted(fetchSlots);
+onMounted(fetchSlots)
 </script>
 
 <style scoped>

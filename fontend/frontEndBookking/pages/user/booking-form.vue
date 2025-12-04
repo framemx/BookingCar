@@ -1,4 +1,7 @@
+
+
 <template>
+  <!-- template เดิมใช้ได้เลย ไม่มีอะไรต้องแก้ -->
   <div class="page-container">
     <div class="content-wrapper">
       <h1 class="page-title animate-pop">📅 จองคิวบริการ</h1>
@@ -102,30 +105,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+/* -------------------------------------------------------
+   🟦 ปรับให้เข้ากับ Nuxt 3 100%
+------------------------------------------------------- */
 
-definePageMeta({ layout: "user" });
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "#app"; // ✅ ใช้ Nuxt Router ที่ถูกต้อง
+
+definePageMeta({
+  layout: "user",
+});
+
+/* ----------------------- STATE ------------------------ */
 
 const router = useRouter();
 const date = ref("");
-const selectedSlot = ref(null);
+const selectedSlot = ref<any>(null);
 const selectedServices = ref<number[]>([]);
-const services = ref([]);
-const slots = ref([]);
-const confirmedBookings = ref([]);
+const services = ref<any[]>([]);
+const slots = ref<any[]>([]);
+const confirmedBookings = ref<any[]>([]);
+
+const dropdownOpen = ref(false);
+
+/* ----------------- AUTH HEADER HANDLER ----------------- */
 
 function getAuthHeaders() {
   const token =
     localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 }
 
-const dropdownOpen = ref(false);
+/* -------------------- DROPDOWN TIME -------------------- */
+
 const toggleDropdown = () => (dropdownOpen.value = !dropdownOpen.value);
+
 const selectSlot = (slot: any) => {
   if (slot.booked) return;
   selectedSlot.value = slot;
@@ -138,7 +156,11 @@ const selectedSlotLabel = computed(() =>
     : ""
 );
 
+/* ---------------------- DATE LIMIT ---------------------- */
+
 const minDate = new Date().toISOString().slice(0, 10);
+
+/* --------------------- GROUP TIMES ---------------------- */
 
 const groupedSlots = computed(() => {
   const groups: Record<string, any[]> = {};
@@ -152,11 +174,10 @@ const groupedSlots = computed(() => {
   }));
 });
 
+/* ------------------- TIME HELPERS ------------------- */
+
 const timeToMinutes = (t: string) =>
-  t
-    .split(":")
-    .map(Number)
-    .reduce((h, m) => h * 60 + m);
+  t.split(":").map(Number).reduce((h, m) => h * 60 + m);
 
 const minutesToTime = (m: number) =>
   `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(
@@ -165,60 +186,75 @@ const minutesToTime = (m: number) =>
   )}`;
 
 const generateHourlySlots = (start: string, end: string) => {
-  const out = [],
-    s = timeToMinutes(start),
-    e = timeToMinutes(end);
-  for (let i = s; i < e; i += 60)
+  const out = [];
+  let s = timeToMinutes(start);
+  let e = timeToMinutes(end);
+  for (let i = s; i < e; i += 60) {
     out.push({
       start: minutesToTime(i),
       end: minutesToTime(Math.min(i + 60, e)),
     });
+  }
   return out;
 };
 
+/* -------------------- AVAILABLE SLOTS -------------------- */
+
 const availableSlots = computed(() => {
   if (!date.value) return [];
+
   return slots.value
     .filter((s) => s.date === date.value)
     .flatMap((slot) => {
-      const hourlySlots = generateHourlySlots(slot.startTime, slot.endTime).map(
-        (s) => ({
-          ...s,
+      // ชั่วโมงย่อย
+      const hourly = generateHourlySlots(slot.startTime, slot.endTime).map(
+        (h) => ({
+          ...h,
           slotId: slot.id,
           slotName: slot.slotName,
         })
       );
-      return hourlySlots.map((hourlySlot) => {
-        const startTime = new Date(`${date.value}T${hourlySlot.start}:00`);
-        const endTime = new Date(`${date.value}T${hourlySlot.end}:00`);
+
+      return hourly.map((hour) => {
+        const start = new Date(`${date.value}T${hour.start}:00`);
+        const end = new Date(`${date.value}T${hour.end}:00`);
+
+        // ตรวจสอบว่าซ้อนเวลาจองไหม
         const isBooked = confirmedBookings.value.some((booking) => {
           if (
             booking.status !== "confirmed" ||
-            !booking.bookingSlots?.some((bs) => bs.slotId === slot.id)
+            !booking.bookingSlots?.some((bs: any) => bs.slotId === slot.id)
           ) {
             return false;
           }
+
           const bookingStart = new Date(
             Math.min(
-              ...booking.bookingSlots.map((bs) =>
+              ...booking.bookingSlots.map((bs: any) =>
                 new Date(bs.startTime).getTime()
               )
             )
           );
+
           const totalDuration =
             booking.bookingServices?.reduce(
-              (sum, bs) => sum + (bs.service?.durationMinutes || 0),
+              (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
               0
             ) || 0;
+
           const bookingEnd = new Date(
             bookingStart.getTime() + totalDuration * 60000
           );
-          return bookingStart < endTime && bookingEnd > startTime;
+
+          return bookingStart < end && bookingEnd > start;
         });
-        return { ...hourlySlot, booked: isBooked };
+
+        return { ...hour, booked: isBooked };
       });
     });
 });
+
+/* ------------------- CALCULATE TOTAL ------------------- */
 
 const totalDuration = computed(() =>
   selectedServices.value.reduce((sum, id) => {
@@ -242,6 +278,8 @@ const canSubmit = computed(
     !selectedSlot.value.booked
 );
 
+/* -------------------- FETCH DATA API -------------------- */
+
 const fetchSlots = async () => {
   const res = await fetch("http://localhost:3000/slots", {
     headers: getAuthHeaders(),
@@ -263,8 +301,10 @@ const fetchConfirmedBookings = async () => {
     headers: getAuthHeaders(),
   });
   const data = await res.json();
-  confirmedBookings.value = data.filter((b) => b.status === "confirmed");
+  confirmedBookings.value = data.filter((b: any) => b.status === "confirmed");
 };
+
+/* --------------------- SUBMIT BOOKING --------------------- */
 
 const submitBooking = async () => {
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
@@ -292,6 +332,7 @@ const submitBooking = async () => {
   });
 
   const booking = await res.json();
+
   if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
 
   router.push({
@@ -299,6 +340,8 @@ const submitBooking = async () => {
     query: { bookingId: booking.id },
   });
 };
+
+/* ------------------------- INIT ------------------------- */
 
 onMounted(async () => {
   await fetchSlots();
