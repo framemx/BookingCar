@@ -67,21 +67,23 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: "user",
+  middleware: ["user"]
+})
+
 import { ref, computed, onMounted } from "vue"
 import { useRouter } from "#app"
 
-definePageMeta({ layout: "user" })
 
 const router = useRouter()
 
 const selectedDate = ref("")
 const allBookings = ref<any[]>([])
 
-/* ------------------- HELPERS ------------------- */
-
+/* ------------------- HEADERS (ใช้ COOKIE) ------------------- */
 function getHeaders(): HeadersInit {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-  const token = userData.token || localStorage.getItem("authToken")
+  const token = useCookie("token").value
 
   return token
     ? {
@@ -90,6 +92,8 @@ function getHeaders(): HeadersInit {
       }
     : { "Content-Type": "application/json" }
 }
+
+/* ------------------- FUNCTIONS ------------------- */
 
 function goBack() {
   router.push("/user/booking-welcome")
@@ -112,7 +116,7 @@ function formatDateDisplay(dateStr: string) {
   })
 }
 
-/* ------------------- TIME PARSING ------------------- */
+/* ------------------- TIME PARSER ------------------- */
 
 function parseTimeRange(booking: any) {
   const startTimes = booking.bookingSlots.map((bs: any) => new Date(bs.startTime))
@@ -127,8 +131,14 @@ function parseTimeRange(booking: any) {
   const endTime = new Date(minStart.getTime() + totalDuration * 60000)
 
   return {
-    start: minStart.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
-    end: endTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+    start: minStart.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit"
+    }),
+    end: endTime.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit"
+    }),
     duration: totalDuration
   }
 }
@@ -148,26 +158,41 @@ const displayedBookings = computed(() => {
   )
 })
 
-/* ------------------- FETCH BOOKINGS ------------------- */
+/* ------------------- FETCH USER BOOKINGS ------------------- */
 
+/* ---- ✔ ใช้ cookie email
+        ✔ ใช้ cookie tokenl ---- */
 onMounted(async () => {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}")
-  const userEmail = userData.email
+  const email = useCookie("email").value
+  const token = useCookie("token").value
 
-  if (!userEmail) {
+  if (!email || !token) {
+    alert("กรุณาเข้าสู่ระบบใหม่")
     router.push("/")
     return
   }
 
-  const res = await fetch(
-    `http://localhost:3000/bookings?userEmail=${userEmail}`,
-    { headers: getHeaders() }
-  )
+  try {
+    const res = await fetch(
+      `http://localhost:3000/bookings?userEmail=${encodeURIComponent(email)}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
 
-  const data = await res.json()
-  allBookings.value = Array.isArray(data) ? data : []
+    const data = await res.json()
+    allBookings.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    console.error("โหลดข้อมูลผิดพลาด", err)
+  }
 })
+
+
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");

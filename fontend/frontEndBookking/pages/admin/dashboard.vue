@@ -45,12 +45,12 @@
               <td>{{ booking.id }}</td>
               <td>{{ booking.customerName }}</td>
               <td>{{ formatDate(booking.date) }}</td>
-              <td class="center">{{ booking.slotName }}</td>
+              <td>{{ booking.slotName }}</td>
               <td>{{ booking.startTime }}</td>
               <td>{{ booking.endTime }}</td>
-              <td class="center">{{ booking.duration }} นาที</td>
-              <td class="center">{{ booking.totalPrice }} ฿</td>
-              <td class="center">{{ booking.serviceCount }}</td>
+              <td>{{ booking.duration }} นาที</td>
+              <td>{{ booking.totalPrice }} ฿</td>
+              <td>{{ booking.serviceCount }}</td>
 
               <td>
                 <div class="status-action-wrapper">
@@ -69,10 +69,7 @@
                     🗑️
                   </button>
 
-                  <ul
-                    v-if="openDropdown === booking.id"
-                    class="dropdown-menu"
-                  >
+                  <ul v-if="openDropdown === booking.id" class="dropdown-menu">
                     <li
                       @click.stop="selectStatus(booking, 'pending')"
                       class="dropdown-item"
@@ -135,7 +132,6 @@
               </div>
             </div>
 
-            <!-- SERVICES -->
             <div class="services-section">
               <h4 class="services-title">🛠️ รายการบริการ:</h4>
 
@@ -170,13 +166,10 @@
 import { ref, computed, onMounted } from "vue"
 import { useRouter } from "#app"
 
-definePageMeta({ layout: "admin" })
-
-/* ----------------- TYPES ------------------ */
+/* ---------------- TYPE DEFINITIONS ---------------- */
 interface Service {
   id: number
   sName: string
-  description: string
   price: number
   durationMinutes: number
 }
@@ -196,8 +189,12 @@ interface Booking {
   services: Service[]
 }
 
-/* ----------------- STATE ------------------ */
+/* ---------------- MAIN STATE ---------------- */
+definePageMeta({ layout: "admin" })
+
 const router = useRouter()
+const tokenCookie = useCookie<string | null>("token")
+
 const bookings = ref<Booking[]>([])
 const selectedDate = ref("")
 const openDropdown = ref<number | null>(null)
@@ -205,10 +202,11 @@ const showPopup = ref(false)
 const showDetailModal = ref(false)
 const selectedBooking = ref<Booking | null>(null)
 
-/* ----------------- UTILS ------------------ */
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("th-TH")
-}
+/* ---------------- COMPUTED ---------------- */
+const filteredBookings = computed(() => {
+  if (!selectedDate.value) return bookings.value
+  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value))
+})
 
 const bookingDetailMap = computed(() => {
   if (!selectedBooking.value) return {}
@@ -220,30 +218,23 @@ const bookingDetailMap = computed(() => {
     ช่องบริการ: selectedBooking.value.slotName,
     เวลาเริ่ม: selectedBooking.value.startTime,
     เวลาสิ้นสุด: selectedBooking.value.endTime,
-    ระยะเวลา: `${selectedBooking.value.duration} นาที`,
-    ราคารวม: `${selectedBooking.value.totalPrice} ฿`,
+    ระยะเวลา: selectedBooking.value.duration + " นาที",
+    ราคารวม: selectedBooking.value.totalPrice + " ฿",
     จำนวนบริการ: selectedBooking.value.serviceCount,
     สถานะ: displayStatus(selectedBooking.value.editingStatus)
   }
 })
 
-/* ----------------- COMPUTED ------------------ */
-const filteredBookings = computed<Booking[]>(() => {
-  if (!selectedDate.value) return bookings.value
-  return bookings.value.filter((b) => b.date.startsWith(selectedDate.value))
-})
-
-/* ----------------- FETCHING ------------------ */
+/* ---------------- FETCH BOOKINGS ---------------- */
 onMounted(async () => {
-  const token = localStorage.getItem("authToken")
-  if (!token) return router.push("/")
+  if (!tokenCookie.value) return router.push("/")
   await fetchBookings()
 })
 
 async function fetchBookings() {
   const res = await fetch("http://localhost:3000/bookings", {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("authToken")}`
+      Authorization: `Bearer ${tokenCookie.value}`
     }
   })
 
@@ -253,22 +244,22 @@ async function fetchBookings() {
   bookings.value = list.map((b: any) => mapBooking(b))
 }
 
-/* ----------- MAP RAW → BOOKING STRUCT ----------- */
+/* ---------------- MAP FUNCTION ---------------- */
 function mapBooking(raw: any): Booking {
   const slots = raw.bookingSlots || []
-  const services = raw.bookingServices || []
+  const services = raw.bookingServices?.map((x: any) => x.service) || []
 
   const minStart = slots.length
     ? new Date(Math.min(...slots.map((s: any) => new Date(s.startTime).getTime())))
     : null
 
   const duration = services.reduce(
-    (sum: number, s: any) => sum + (s.service?.durationMinutes || 0),
+    (sum: number, s: any) => sum + (s.durationMinutes || 0),
     0
   )
 
   const totalPrice = services.reduce(
-    (sum: number, s: any) => sum + (s.service?.price || 0),
+    (sum: number, s: any) => sum + (s.price || 0),
     0
   )
 
@@ -278,7 +269,7 @@ function mapBooking(raw: any): Booking {
 
   return {
     id: raw.id,
-    customerName: raw.user?.uName ?? "ไม่ระบุ",
+    customerName: raw.user?.uName ?? "-",
     date: raw.bookingDate,
     startTime: minStart?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) ?? "-",
     endTime: end?.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) ?? "-",
@@ -288,11 +279,15 @@ function mapBooking(raw: any): Booking {
     slotName: slots[0]?.slot?.slotName ?? "-",
     status: raw.status,
     editingStatus: raw.status,
-    services: services.map((s: any) => s.service)
+    services
   }
 }
 
-/* ----------------- ACTIONS ------------------ */
+/* ---------------- ACTIONS ---------------- */
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("th-TH")
+}
+
 function openDetailModal(booking: Booking) {
   selectedBooking.value = booking
   showDetailModal.value = true
@@ -307,11 +302,7 @@ function toggleDropdown(id: number) {
 }
 
 function displayStatus(status: string) {
-  return status === "pending"
-    ? "รออนุมัติ"
-    : status === "confirmed"
-    ? "ยืนยันแล้ว"
-    : "รออนุมัติ"
+  return status === "pending" ? "รออนุมัติ" : "ยืนยันแล้ว"
 }
 
 function statusColor(status: string) {
@@ -323,12 +314,13 @@ function selectStatus(booking: Booking, status: string) {
   updateStatus(booking.id, status)
 }
 
+/* ---------------- UPDATE STATUS ---------------- */
 async function updateStatus(id: number, status: string) {
   const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("authToken")}`
+      Authorization: `Bearer ${tokenCookie.value}`
     },
     body: JSON.stringify({ status })
   })
@@ -340,13 +332,14 @@ async function updateStatus(id: number, status: string) {
   }
 }
 
+/* ---------------- DELETE BOOKING ---------------- */
 async function deleteBooking(id: number) {
   if (!confirm("ต้องการลบการจองนี้หรือไม่?")) return
 
   const res = await fetch(`http://localhost:3000/bookings/${id}`, {
     method: "DELETE",
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("authToken")}`
+      Authorization: `Bearer ${tokenCookie.value}`
     }
   })
 
@@ -356,6 +349,8 @@ async function deleteBooking(id: number) {
   }
 }
 </script>
+
+
 
 
 <style scoped>

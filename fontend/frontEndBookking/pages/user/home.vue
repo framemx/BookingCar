@@ -97,20 +97,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
-import { useRouter } from "#app"   // ✅ แก้แล้ว: Nuxt router ต้องใช้ #app
+import { ref } from "vue"
 import UIcon from "~/components/UIcon.vue"
 
-definePageMeta({ layout: "user" })
-
-const router = useRouter()
-const activeImage = ref<string | null>(null)
-
-/* ---------------- AUTH GUARD ---------------- */
-onMounted(() => {
-  const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
-  if (!token) router.push("/")
+definePageMeta({
+  layout: "user"
 })
+
+
+
+
+const activeImage = ref<string | null>(null)
 
 /* ---------------- MODAL ---------------- */
 function showImagePopup(src: string) {
@@ -146,6 +143,7 @@ const reasons = [
   { title: "จองง่ายผ่านมือถือ", text: "ใช้งานได้ทุกอุปกรณ์", icon: "i-lucide-smartphone" },
 ]
 </script>
+
 
 
 <style scoped>
@@ -402,11 +400,7 @@ const reasons = [
   }
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
+
 @media (max-width: 640px) {
   .modal-image {
     width: 90vw;

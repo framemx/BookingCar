@@ -3,20 +3,23 @@
     <div class="content-wrapper">
       <h1 class="page-title">📅 หน้าจองคิว</h1>
 
-      <!-- USER INFO -->
       <section class="user-info">
         <p><strong>👤 ยินดีต้อนรับ:</strong> {{ userName }}</p>
         <p><strong>📧 อีเมล:</strong> {{ userEmail }}</p>
       </section>
 
-      <!-- ACTION BUTTONS -->
       <div class="action-bar">
-        <button class="booking-button" @click="goToBookingForm">+ จองเวลา</button>
-        <button class="refresh-button" @click="refreshBookings">🔄 รีเฟรช</button>
-        <button class="history-button" @click="goToHistory">📜 ประวัติการจอง</button>
+        <button class="booking-button" @click="goToBookingForm">
+          + จองเวลา
+        </button>
+        <button class="refresh-button" @click="refreshBookings">
+          🔄 รีเฟรช
+        </button>
+        <button class="history-button" @click="goToHistory">
+          📜 ประวัติการจอง
+        </button>
       </div>
 
-      <!-- TODAY BOOKINGS -->
       <h2 class="section-title">📋 ตารางการจองของคุณ (วันนี้)</h2>
 
       <table v-if="todayBookings.length > 0" class="slot-table">
@@ -24,20 +27,22 @@
           <tr>
             <th>วันที่</th>
             <th>ช่องบริการ</th>
-            <th>เวลาเริ่ม</th>
-            <th>เวลาสิ้นสุด</th>
+            <th>เริ่ม</th>
+            <th>สิ้นสุด</th>
             <th>ระยะเวลา</th>
             <th>บริการ</th>
             <th>สถานะ</th>
           </tr>
         </thead>
+
         <tbody>
-          <tr v-for="booking in todayBookings" :key="booking.id" class="table-row">
+          <tr v-for="booking in todayBookings" :key="booking.id">
             <td>{{ formatDateDisplay(booking.bookingDate) }}</td>
             <td>{{ booking.bookingSlots[0].slot.slotName }}</td>
             <td>{{ booking.start }}</td>
             <td>{{ booking.end }}</td>
             <td>{{ formatDuration(booking.duration) }}</td>
+
             <td>
               <ul class="service-list">
                 <li v-for="bs in booking.bookingServices" :key="bs.service.id">
@@ -45,16 +50,19 @@
                 </li>
               </ul>
             </td>
+
             <td>
               <span
-                :class="booking.status.toUpperCase() === 'CONFIRMED'
-                  ? 'status-confirmed'
-                  : 'status-pending'"
+                :class="
+                  booking.status.toUpperCase() === 'CONFIRMED'
+                    ? 'status-confirmed'
+                    : 'status-pending'
+                "
               >
                 {{
-                  booking.status.toUpperCase() === 'CONFIRMED'
-                    ? 'ยืนยันแล้ว'
-                    : 'รออนุมัติ'
+                  booking.status.toUpperCase() === "CONFIRMED"
+                    ? "ยืนยันแล้ว"
+                    : "รออนุมัติ"
                 }}
               </span>
             </td>
@@ -64,11 +72,9 @@
 
       <p v-else class="no-bookings">ไม่มีการจองสำหรับวันนี้</p>
 
-      <!-- DATE PICKER -->
       <div class="date-select-bar">
-        <label class="date-label" for="datePicker"> เลือกวันที่ </label>
+        <label class="date-label">เลือกวันที่</label>
         <input
-          id="datePicker"
           type="date"
           :min="minDate"
           v-model="selectedDate"
@@ -77,10 +83,8 @@
       </div>
 
       <h2 class="section-title">
-        📌 ตารางเวลาสำหรับวันที่ {{ formatDateDisplay(selectedDate) }}
-      </h2>
+        📌 ตารางเวลาสำหรับวันที่ {{ formatDateDisplay(selectedDate) }} </h2>
 
-      <!-- SLOTS LIST -->
       <table v-if="slotsOfSelectedDate.length > 0" class="slot-table">
         <thead>
           <tr>
@@ -90,34 +94,46 @@
             <th>สถานะ</th>
           </tr>
         </thead>
+
         <tbody>
           <template v-for="slot in slotsOfSelectedDate" :key="slot.id">
-            <tr @click="toggleSlotDetail(slot.id)" class="table-row slot-row">
+            <tr @click="toggleSlot(slot.id)" style="cursor: pointer">
               <td>{{ slot.slotName }}</td>
               <td>{{ formatTime(slot.startTime) }}</td>
               <td>{{ formatTime(slot.endTime) }}</td>
               <td>
-                <span :class="slot.status === 'AVAILABLE' ? 'status-available' : 'status-booked'">
-                  {{ slot.status === 'AVAILABLE' ? 'ว่าง' : 'จองแล้ว' }}
+                <span
+                  :class="
+                    slot.status === 'AVAILABLE'
+                      ? 'status-available'
+                      : 'status-booked'
+                  "
+                >
+                  {{ slot.status === "AVAILABLE" ? "ว่าง" : "จองแล้ว" }}
+                </span>
+
+                <span style="margin-left: 12px">
+                  {{ expandedSlot === slot.id ? "▲" : "▼" }}
                 </span>
               </td>
             </tr>
 
-            <tr v-if="expandedSlotId === slot.id" class="expanded-row">
+            <tr v-if="expandedSlot === slot.id" class="expanded-row">
               <td colspan="4">
                 <div
-                  v-for="sub in generateHourlySlotsWithOverlap(
-                    slot.startTime,
-                    slot.endTime,
-                    allConfirmedBookings,
-                    slot.id
-                  )"
-                  :key="sub.label"
+                  v-for="time in slot.timeRanges"
+                  :key="time.start"
                   class="sub-slot-content"
                 >
-                  <div class="time-label">🕒 {{ sub.label }}</div>
-                  <span :class="sub.booked ? 'status-booked' : 'status-available'">
-                    {{ sub.booked ? 'จองแล้ว' : 'ว่าง' }}
+                  <span class="time-label">
+                    {{ time.start }} - {{ time.end }}
+                  </span>
+                  <span
+                    :style="{
+                      color: time.status === 'จองแล้ว' ? 'red' : 'green',
+                    }"
+                  >
+                    {{ time.status }}
                   </span>
                 </div>
               </td>
@@ -132,281 +148,246 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from '#app'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "#app";
 
-definePageMeta({ layout: 'user' })
+/* ---------------- AUTH ---------------- */
+definePageMeta({
+  layout: "user",
+  middleware: ["user"],
+});
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const userId = useCookie("id").value;
+const userEmail = ref(useCookie("email").value || "-");
+const userName = ref(useCookie("name").value || "ผู้ใช้");
+
+if (!userId) {
+  alert("กรุณาเข้าสู่ระบบใหม่");
+  router.push("/");
+}
 
 /* ---------------- STATE ---------------- */
-const userName = ref('')
-const userEmail = ref('')
-const slots = ref<any[]>([])
-const userBookings = ref<any[]>([])
-const latestBooking = ref<any>(null)
-const allConfirmedBookings = ref<any[]>([])
-const selectedDate = ref('')
-const minDate = ref('')
-const expandedSlotId = ref<number | null>(null)
-
-let dateUpdateInterval: any = null
+const slots = ref<any[]>([]);
+const userBookings = ref<any[]>([]);
+const allBookings = ref<any[]>([]);
+const selectedDate = ref("");
+const minDate = ref("");
+const expandedSlot = ref<number | null>(null);
 
 /* ---------------- HELPERS ---------------- */
 
-function getHeaders(): HeadersInit {
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-  const token = userData.token || localStorage.getItem('authToken')
-
-  return token
-    ? {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      }
-    : { 'Content-Type': 'application/json' }
+function toThaiTime(dateStr: string) {
+  return new Date(dateStr).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function getCurrentDateString() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function updateCurrentDate() {
-  const now = getCurrentDateString()
-  selectedDate.value = now
-  minDate.value = now
-}
-
-function toggleSlotDetail(id: number) {
-  expandedSlotId.value = expandedSlotId.value === id ? null : id
-}
-
-/* TIME FORMATTERS */
 function formatTime(dt: string) {
-  const d = new Date(dt)
-  return d.toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
+  return toThaiTime(dt);
 }
 
 function formatDateDisplay(dateStr: string) {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('th-TH', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  return new Date(dateStr).toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
+
+const todayDate = new Date().toISOString().slice(0, 10);
 
 function formatDuration(min: number) {
-  if (min < 60) return `${min} นาที`
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m === 0 ? `${h} ชม.` : `${h} ชม. ${m} นาที`
+  if (!min) return "0 นาที";
+
+  if (min < 60) return `${min} นาที`;
+
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+
+  return m === 0 ? `${h} ชม.` : `${h} ชม. ${m} นาที`;
 }
 
-/* ---------------- FETCH API ---------------- */
+function toggleSlot(id: number) {
+  expandedSlot.value = expandedSlot.value === id ? null : id;
+}
+
+function getHeaders(): HeadersInit {
+  const token = useCookie("token").value;
+  return token
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : { "Content-Type": "application/json" };
+}
+
+/* ---------------- SLOT RANGE GENERATION ---------------- */
+
+function generateTimeRanges(slot: any) {
+  const ranges = [];
+  let start = new Date(slot.startTime);
+  let end = new Date(slot.endTime);
+
+  while (start < end) {
+    const next = new Date(start.getTime() + 60 * 60000);
+
+    ranges.push({
+      start: toThaiTime(start.toISOString()),
+      end: toThaiTime(next.toISOString()),
+      startISO: start.toISOString(),
+      endISO: next.toISOString(),
+      status: "ว่าง",
+    });
+
+    start = next;
+  }
+
+  return ranges;
+}
+
+/* ---------------- FETCH ---------------- */
 
 async function fetchSlots() {
-  try {
-    const res = await fetch('http://localhost:3000/slots', {
-      headers: { ...getHeaders() }
-    })
+  const res = await fetch("http://localhost:3000/slots", {
+    headers: getHeaders(),
+  });
+  const data = await res.json();
 
-    const data = await res.json()
+  slots.value = data.map((s: any) => {
+    const startTime = `${s.date}T${s.startTime}:00`;
+    const endTime = `${s.date}T${s.endTime}:00`;
 
-    slots.value = Array.isArray(data)
-      ? data.map((slot: any) => ({
-          ...slot,
-          startTime: `${slot.date}T${slot.startTime}:00`,
-          endTime: `${slot.date}T${slot.endTime}:00`
-        }))
-      : []
-  } catch (err) {
-    console.error('Fetch slots failed:', err)
-  }
+    return {
+      ...s,
+      startTime,
+      endTime,
+      status: "AVAILABLE",
+      timeRanges: generateTimeRanges({ startTime, endTime }),
+    };
+  });
+}
+
+async function fetchAllBookings() {
+  const res = await fetch("http://localhost:3000/bookings", {
+    headers: getHeaders(),
+  });
+  allBookings.value = await res.json();
 }
 
 async function fetchUserBookings() {
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-  if (!userData.email) return
+  const email = useCookie("email").value;
+  if (!email) return;
 
-  const res = await fetch(
-    `http://localhost:3000/bookings?userEmail=${userData.email}`,
-    { headers: { ...getHeaders() } }
-  )
+  const res = await fetch(`http://localhost:3000/bookings?userEmail=${email}`, {
+    headers: getHeaders(),
+  });
+  const bookings = await res.json();
 
-  const data = await res.json()
+  userBookings.value = bookings.map((b: any) => {
+    const startTimes = b.bookingSlots.map((bs: any) => new Date(bs.startTime));
+    const minStart = new Date(Math.min(...startTimes));
 
-  userBookings.value = Array.isArray(data)
-    ? data.filter((b: any) =>
-        ['confirmed', 'pending'].includes(b.status?.toLowerCase())
-      )
-    : []
+    const duration =
+      b.bookingServices.reduce(
+        (sum: number, bs: any) => sum + (bs.service?.durationMinutes ?? 0),
+        0
+      ) ?? 0;
+
+    const end = new Date(minStart.getTime() + duration * 60000);
+
+    return {
+      ...b,
+      start: toThaiTime(minStart.toISOString()),
+      end: toThaiTime(end.toISOString()),
+      duration,
+    };
+  });
 }
 
-async function fetchConfirmedBookingsForSlots() {
-  const res = await fetch('http://localhost:3000/bookings', {
-    headers: { ...getHeaders() }
-  })
-  const data = await res.json()
-
-  allConfirmedBookings.value = Array.isArray(data)
-    ? data.filter((b: any) => b.status?.toLowerCase() === 'confirmed')
-    : []
+interface TimeRange {
+  start: string;
+  end: string;
+  startISO: string;
+  endISO: string;
+  status: string;
 }
 
-/* ---------------- BOOKING TIME CALC ---------------- */
+/* ---------------- APPLY BOOKING STATUS TO SLOTS ---------------- */
 
-function parseBookingTime(booking: any) {
-  const startTimes = booking.bookingSlots.map((bs: any) =>
-    new Date(bs.startTime)
-  )
-  const minStart = new Date(
-    Math.min(...startTimes.map((d: Date) => d.getTime()))
-  )
-  const duration =
-    booking.bookingServices?.reduce(
-      (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
-      0
-    ) || 0
+function markSlotStatus() {
+  slots.value.forEach((slot) => {
+    const slotBookings = allBookings.value.filter(
+      (b: any) =>
+        b.bookingSlots[0]?.slotId === slot.id &&
+        b.status.toLowerCase() === "confirmed"
+    );
 
-  const end = new Date(minStart.getTime() + duration * 60000)
+    if (slotBookings.length > 0) {
+      slot.status = "BOOKED";
+    }
 
-  return {
-    start: minStart.toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
-    end: end.toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
-    duration
-  }
+    slot.timeRanges.forEach((range: TimeRange) => {
+      const rStart = new Date(range.startISO).getTime();
+      const rEnd = new Date(range.endISO).getTime();
+
+      const foundOverlap = slotBookings.some((b: any) => {
+        const bStart = new Date(b.bookingSlots[0].startTime).getTime();
+        const bEnd = new Date(b.bookingSlots[0].endTime).getTime();
+        return bStart < rEnd && bEnd > rStart;
+      });
+
+      range.status = foundOverlap ? "จองแล้ว" : "ว่าง";
+    });
+  });
 }
 
-const combinedBookings = computed(() =>
-  [...userBookings.value]
-    .map((b) => ({ ...b, ...parseBookingTime(b) }))
-    .sort(
-      (a, b) =>
-        new Date(a.bookingDate).getTime() -
-        new Date(b.bookingDate).getTime()
-    )
-)
-
-const todayBookings = computed(() => {
-  const today = getCurrentDateString()
-  return combinedBookings.value.filter(
-    (b) => b.bookingDate.slice(0, 10) === today
-  )
-})
+/* ---------------- COMPUTED ---------------- */
 
 const slotsOfSelectedDate = computed(() =>
   slots.value.filter((s) => s.date === selectedDate.value)
-)
+);
 
-/* ---------------- EXPAND HOURLY ---------------- */
+const todayBookings = computed(() => {
+  const todayStr = new Date().toLocaleDateString("en-CA");
+  // en-CA = YYYY-MM-DD มาตรฐาน
 
-function generateHourlySlotsWithOverlap(start: string, end: string, bookings: any[], slotId: number) {
-  const result = []
-  let s = new Date(start)
-  const e = new Date(end)
+  return userBookings.value.filter((b) => {
+    const d = new Date(b.bookingDate).toLocaleDateString("en-CA");
+    return d === todayStr;
+  });
+});
 
-  while (s < e) {
-    const next = new Date(s.getTime() + 60 * 60000)
+/* ---------------- PAGE ACTION ---------------- */
 
-    const isBooked = bookings.some((b) => {
-      if (b.status !== 'confirmed') return false
-      if (!b.bookingSlots.some((bs: any) => bs.slotId === slotId)) return false
-
-      const bStart = new Date(
-        Math.min(
-          ...b.bookingSlots.map((bs: any) =>
-            new Date(bs.startTime).getTime()
-          )
-        )
-      )
-      const duration =
-        b.bookingServices?.reduce(
-          (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
-          0
-        ) || 0
-      const bEnd = new Date(bStart.getTime() + duration * 60000)
-
-      return bStart < next && bEnd > s
-    })
-
-    result.push({
-      label: `${formatTime(s.toISOString())} - ${formatTime(next.toISOString())}`,
-      booked: isBooked
-    })
-
-    s = next
-  }
-
-  return result
-}
-
-/* ---------------- PAGE NAVIGATION ---------------- */
-
-const goToBookingForm = () => router.push('/user/booking-form')
-const goToHistory = () => router.push('/user/history')
-
-/* ---------------- REFRESH ---------------- */
+const goToBookingForm = () => router.push("/user/booking-form");
+const goToHistory = () => router.push("/user/history");
 
 async function refreshBookings() {
-  updateCurrentDate()
-  await fetchUserBookings()
-  await fetchSlots()
-  await fetchConfirmedBookingsForSlots()
+  await fetchSlots();
+  await fetchAllBookings();
+  await fetchUserBookings();
+  markSlotStatus();
 }
 
-/* ---------------- LIFECYCLE ---------------- */
+/* ---------------- INIT ---------------- */
 
 onMounted(async () => {
-  updateCurrentDate()
-
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-  userName.value = userData.name || 'ผู้ใช้'
-  userEmail.value = userData.email || '-'
-
-  await fetchSlots()
-  await fetchUserBookings()
-  await fetchConfirmedBookingsForSlots()
-
-  if (route.query.bookingId) {
-    const res = await fetch(
-      `http://localhost:3000/bookings/${route.query.bookingId}`,
-      { headers: { ...getHeaders() } }
-    )
-    latestBooking.value = await res.json()
+  const token = useCookie("token").value;
+  if (!token) {
+    alert("กรุณาเข้าสู่ระบบใหม่");
+    router.push("/");
+    return;
   }
 
-  dateUpdateInterval = setInterval(updateCurrentDate, 60000)
-})
+  const today = new Date().toISOString().slice(0, 10);
+    selectedDate.value = today; // วันที่ปัจจุบัน
+  minDate.value = today;
 
-onUnmounted(() => {
-  if (dateUpdateInterval) clearInterval(dateUpdateInterval)
-})
-
-watch(
-  () => route.query.bookingId,
-  async (id) => {
-    if (!id) return
-
-    const res = await fetch(`http://localhost:3000/bookings/${id}`, {
-      headers: { ...getHeaders() }
-    })
-    latestBooking.value = await res.json()
-    await fetchUserBookings()
-  }
-)
+  await fetchSlots();
+  await fetchAllBookings();
+  await fetchUserBookings();
+  markSlotStatus();
+});
 </script>
 
 <style scoped>

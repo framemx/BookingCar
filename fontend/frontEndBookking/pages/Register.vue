@@ -43,7 +43,6 @@
 </template>
 
 <script setup lang="ts">
-// ไม่ใช้ layout user เพราะเป็นหน้า public
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
@@ -89,6 +88,7 @@ async function handleRegister() {
     const registerData = await registerRes.json();
     if (!registerRes.ok) throw new Error(registerData.message || "สมัครสมาชิกไม่สำเร็จ");
 
+    // 🔥 Login อัตโนมัติหลังสมัคร
     const loginRes = await fetch("http://localhost:3000/users/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,18 +101,27 @@ async function handleRegister() {
     const loginData = await loginRes.json();
     if (!loginRes.ok) throw new Error(loginData.message || "เข้าสู่ระบบอัตโนมัติไม่สำเร็จ");
 
-    localStorage.setItem("authToken", loginData.data.token);
+    // -----------------------------------------------------
+    // ⭐ แก้ตรงนี้! เก็บ role แบบ lowercase
+    // -----------------------------------------------------
+    const tokenCookie = useCookie<string | null>("token");
+    const roleCookie = useCookie<string | null>("role");
 
+    tokenCookie.value = loginData.data.token;
+    roleCookie.value = loginData.data.role.toLowerCase(); // ⭐ สำคัญที่สุด
+
+    // เก็บเพิ่มใน localStorage (optional)
     localStorage.setItem(
       "userData",
       JSON.stringify({
         name: loginData.data.name,
         email: loginData.data.email,
-        role: loginData.data.role,
+        role: loginData.data.role.toLowerCase(),
       })
     );
 
-    router.push("/");
+    // ⭐ พาผู้ใช้ไปหน้า user
+    router.push("/user/home");
 
   } catch (err: any) {
     error.value = err.message;
@@ -124,6 +133,7 @@ function goToLogin() {
   router.push("/");
 }
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");

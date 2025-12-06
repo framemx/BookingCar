@@ -54,9 +54,8 @@
 </template>
 
 <script setup lang="ts">
-// ไม่ต้องใช้ definePageMeta เพราะเป็นหน้า public
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter } from "#app";
 
 const logoUrl = "/images/logo.jpg";
 
@@ -66,6 +65,19 @@ const error = ref("");
 const glowX = ref(0);
 const glowY = ref(0);
 const router = useRouter();
+
+// 🌟 เก็บ token + role ใน cookie
+const tokenCookie = useCookie<string | null>("token", {
+  sameSite: "strict",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7, // 1 สัปดาห์
+});
+
+const roleCookie = useCookie<string | null>("role", {
+  sameSite: "strict",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
+});
 
 function handleMouseMove(e: MouseEvent) {
   glowX.value = e.clientX;
@@ -84,35 +96,52 @@ async function handleLogin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email.value,
-        password: password.value
+        password: password.value,
       }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Login failed");
 
-    // เก็บข้อมูลใน localStorage
-    localStorage.setItem("userData", JSON.stringify({
-      id: data.data.id,
-      name: data.data.uName,
-      email: data.data.email,
-      phone: data.data.phone || "",
-      profilePicture: data.data.profilePicture || "👤",
-      role: data.data.role,
-      token: data.data.token,
-    }));
+    if (!res.ok) {
+      throw new Error(data.message || "Login failed");
+    }
 
-    localStorage.setItem("authToken", data.data.token);
+    // ⭐ เก็บข้อมูลใน localStorage
+    localStorage.setItem(
+      "userData",
+      JSON.stringify({
+        id: data.data.id,
+        name: data.data.uName,
+        email: data.data.email,
+        phone: data.data.phone || "",
+        profilePicture: data.data.profilePicture || "👤",
+        role: data.data.role,
+        token: data.data.token,
+      })
+    );
 
-    // redirect ตาม role
-    if (data.data.role === "ADMIN") {
+    const tokenCookie = useCookie("token");
+    const roleCookie = useCookie("role");
+    const emailCookie = useCookie("email");
+    const nameCookie = useCookie("name");
+    const phoneCookie = useCookie("phone");
+    const idCookie = useCookie("id");
+
+    tokenCookie.value = data.data.token;
+    roleCookie.value = data.data.role.toLowerCase();
+    emailCookie.value = data.data.email;
+    nameCookie.value = data.data.uName;
+    phoneCookie.value = data.data.phone || "";
+    idCookie.value = data.data.id;
+
+    // ⭐ Redirect ตาม role
+    if (roleCookie.value === "admin") {
       router.push("/admin/dashboard");
     } else {
       router.push("/user/home");
     }
-
   } catch (err: any) {
-    error.value = "ไม่สามารถเข้าสู่ระบบได้: บทบาทไม่ถูกต้อง";
+    error.value = err.message || "เข้าสู่ระบบล้มเหลว";
   }
 }
 
@@ -170,7 +199,6 @@ function goToRegister() {
   padding: 10px;
   width: fit-content;
 }
-
 .brand-content:hover {
   transform: translateY(-4px);
   transition: transform 0.3s ease;
@@ -205,6 +233,7 @@ function goToRegister() {
   mix-blend-mode: screen;
   z-index: 0;
 }
+
 .form-wrapper {
   background: white;
   padding: 40px;
@@ -219,6 +248,7 @@ function goToRegister() {
 .form-wrapper:hover {
   transform: translateY(-4px);
 }
+
 .logo {
   height: 100px;
   width: 100px;
@@ -230,6 +260,7 @@ function goToRegister() {
   background-color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
 h2 {
   font-size: 1.8rem;
   color: #1e3a8a;
@@ -237,12 +268,14 @@ h2 {
   margin-bottom: 1.5rem;
   font-weight: 600;
 }
+
 label {
   display: block;
   margin-bottom: 6px;
   color: #334155;
   font-size: 0.95rem;
 }
+
 input {
   width: 100%;
   padding: 12px 16px;
@@ -250,14 +283,19 @@ input {
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   font-size: 1rem;
-  color: #111827; /* ✅ เพิ่มสีข้อความที่กรอก */
+  color: #111827;
   transition: border 0.3s ease, box-shadow 0.3s ease;
 }
+
 input:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
-  outline: none;
 }
+
+input::placeholder {
+  color: #9ca3af;
+}
+
 .btn-login {
   width: 100%;
   padding: 12px;
@@ -268,16 +306,12 @@ input:focus {
   border-radius: 10px;
   margin-bottom: 14px;
   cursor: pointer;
-  transition: background 0.3s ease;
 }
+
 .btn-login:hover {
   background-color: #1e40af;
 }
 
-input::placeholder {
-  color: #9ca3af; /* หรือปรับเป็น #1e40af หากต้องการ */
-  opacity: 1;
-}
 .btn-secondary {
   width: 100%;
   padding: 12px;
@@ -287,11 +321,12 @@ input::placeholder {
   font-weight: 500;
   color: #374151;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
+
 .btn-secondary:hover {
   background-color: #e2e8f0;
 }
+
 .error-msg {
   color: #dc2626;
   text-align: center;

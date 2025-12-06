@@ -126,6 +126,11 @@
 </template>
 
 <script setup lang="ts">
+
+definePageMeta({
+  middleware: ["user"]
+})
+
 const route = useRoute()
 
 const showLogoutModal = ref(false)
@@ -141,14 +146,13 @@ const token = useCookie("token")
    TYPE ของ user ที่ได้จาก API
 ----------------------- */
 type UserResponse = {
-  uName: string
-  email: string
-  phone: string
+  data: {
+    uName: string
+    email: string
+    phone: string
+  }
 }
 
-/* -----------------------
-   โหลดข้อมูลผู้ใช้
------------------------ */
 const { data: user, error } = await useFetch<UserResponse>(
   "http://localhost:3000/users/me",
   {
@@ -160,19 +164,23 @@ const { data: user, error } = await useFetch<UserResponse>(
 )
 
 const userProfile = ref({
-  name: user.value?.uName || "",
-  email: user.value?.email || "",
-  phone: user.value?.phone || "",
+  name: user.value?.data.uName || "",
+  email: user.value?.data.email || "",
+  phone: user.value?.data.phone || "",
   profilePicture: "👤"
 })
+
 
 /* -----------------------
  LOGOUT
 ----------------------- */
 function logout() {
-  token.value = null
+  useCookie("token").value = null
+  useCookie("role").value = null
+  localStorage.removeItem("userData")
   navigateTo("/")
 }
+
 
 /* -----------------------
  ACTIVE PAGE

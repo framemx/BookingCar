@@ -1,5 +1,3 @@
-
-
 <template>
   <!-- template เดิมใช้ได้เลย ไม่มีอะไรต้องแก้ -->
   <div class="page-container">
@@ -105,34 +103,27 @@
 </template>
 
 <script setup lang="ts">
-/* -------------------------------------------------------
-   🟦 ปรับให้เข้ากับ Nuxt 3 100%
-------------------------------------------------------- */
-
 import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "#app"; // ✅ ใช้ Nuxt Router ที่ถูกต้อง
+import { useRouter } from "#app";
 
 definePageMeta({
   layout: "user",
 });
 
-/* ----------------------- STATE ------------------------ */
-
 const router = useRouter();
+
 const date = ref("");
 const selectedSlot = ref<any>(null);
 const selectedServices = ref<number[]>([]);
 const services = ref<any[]>([]);
 const slots = ref<any[]>([]);
 const confirmedBookings = ref<any[]>([]);
-
 const dropdownOpen = ref(false);
 
-/* ----------------- AUTH HEADER HANDLER ----------------- */
+/* ---------------- AUTH: ใช้ Cookie แทน localStorage ---------------- */
 
 function getAuthHeaders() {
-  const token =
-    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+  const token = useCookie("token").value;
 
   return {
     "Content-Type": "application/json",
@@ -140,7 +131,7 @@ function getAuthHeaders() {
   };
 }
 
-/* -------------------- DROPDOWN TIME -------------------- */
+/* ----------------- Dropdown ----------------- */
 
 const toggleDropdown = () => (dropdownOpen.value = !dropdownOpen.value);
 
@@ -156,25 +147,11 @@ const selectedSlotLabel = computed(() =>
     : ""
 );
 
-/* ---------------------- DATE LIMIT ---------------------- */
+/* ----------------- Date ----------------- */
 
 const minDate = new Date().toISOString().slice(0, 10);
 
-/* --------------------- GROUP TIMES ---------------------- */
-
-const groupedSlots = computed(() => {
-  const groups: Record<string, any[]> = {};
-  for (const slot of availableSlots.value) {
-    if (!groups[slot.slotName]) groups[slot.slotName] = [];
-    groups[slot.slotName].push(slot);
-  }
-  return Object.entries(groups).map(([slotName, slots]) => ({
-    slotName,
-    slots,
-  }));
-});
-
-/* ------------------- TIME HELPERS ------------------- */
+/* ----------------- Time Helpers ----------------- */
 
 const timeToMinutes = (t: string) =>
   t.split(":").map(Number).reduce((h, m) => h * 60 + m);
@@ -198,7 +175,7 @@ const generateHourlySlots = (start: string, end: string) => {
   return out;
 };
 
-/* -------------------- AVAILABLE SLOTS -------------------- */
+/* ----------------- Available Slots ----------------- */
 
 const availableSlots = computed(() => {
   if (!date.value) return [];
@@ -206,7 +183,6 @@ const availableSlots = computed(() => {
   return slots.value
     .filter((s) => s.date === date.value)
     .flatMap((slot) => {
-      // ชั่วโมงย่อย
       const hourly = generateHourlySlots(slot.startTime, slot.endTime).map(
         (h) => ({
           ...h,
@@ -219,26 +195,26 @@ const availableSlots = computed(() => {
         const start = new Date(`${date.value}T${hour.start}:00`);
         const end = new Date(`${date.value}T${hour.end}:00`);
 
-        // ตรวจสอบว่าซ้อนเวลาจองไหม
-        const isBooked = confirmedBookings.value.some((booking) => {
+        const isBooked = confirmedBookings.value.some((b: any) => {
           if (
-            booking.status !== "confirmed" ||
-            !booking.bookingSlots?.some((bs: any) => bs.slotId === slot.id)
+            b.status !== "confirmed" ||
+            !b.bookingSlots?.some((bs: any) => bs.slotId === slot.id)
           ) {
             return false;
           }
 
           const bookingStart = new Date(
             Math.min(
-              ...booking.bookingSlots.map((bs: any) =>
+              ...b.bookingSlots.map((bs: any) =>
                 new Date(bs.startTime).getTime()
               )
             )
           );
 
           const totalDuration =
-            booking.bookingServices?.reduce(
-              (sum: number, bs: any) => sum + (bs.service?.durationMinutes || 0),
+            b.bookingServices?.reduce(
+              (sum: number, bs: any) =>
+                sum + (bs.service?.durationMinutes || 0),
               0
             ) || 0;
 
@@ -254,7 +230,23 @@ const availableSlots = computed(() => {
     });
 });
 
-/* ------------------- CALCULATE TOTAL ------------------- */
+/* ----------------- Group Slots (แก้ error ตัวแดง) ----------------- */
+
+const groupedSlots = computed(() => {
+  const groups: Record<string, any[]> = {};
+
+  for (const slot of availableSlots.value) {
+    if (!groups[slot.slotName]) groups[slot.slotName] = [];
+    groups[slot.slotName].push(slot);
+  }
+
+  return Object.entries(groups).map(([slotName, slots]) => ({
+    slotName,
+    slots,
+  }));
+});
+
+/* ----------------- Summary ----------------- */
 
 const totalDuration = computed(() =>
   selectedServices.value.reduce((sum, id) => {
@@ -278,13 +270,12 @@ const canSubmit = computed(
     !selectedSlot.value.booked
 );
 
-/* -------------------- FETCH DATA API -------------------- */
+/* ----------------- Fetch APIs ----------------- */
 
 const fetchSlots = async () => {
   const res = await fetch("http://localhost:3000/slots", {
     headers: getAuthHeaders(),
   });
-  if (!res.ok) return alert("โหลด slot ไม่สำเร็จ");
   slots.value = await res.json();
 };
 
@@ -304,14 +295,14 @@ const fetchConfirmedBookings = async () => {
   confirmedBookings.value = data.filter((b: any) => b.status === "confirmed");
 };
 
-/* --------------------- SUBMIT BOOKING --------------------- */
+/* ----------------- Submit Booking ----------------- */
 
 const submitBooking = async () => {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-  if (!userData?.id) return alert("ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบ");
+  const userId = useCookie("id").value;
+  if (!userId) return alert("กรุณาเข้าสู่ระบบใหม่");
 
   const payload = {
-    userId: userData.id,
+    userId,
     bookingDate: date.value,
     status: "PENDING",
     description: "",
@@ -336,12 +327,12 @@ const submitBooking = async () => {
   if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
 
   router.push({
-    path: "/user/bookingWelcome",
+    path: "/user/booking-welcome",
     query: { bookingId: booking.id },
   });
 };
 
-/* ------------------------- INIT ------------------------- */
+/* ----------------- Init ----------------- */
 
 onMounted(async () => {
   await fetchSlots();
@@ -353,6 +344,8 @@ watch(date, () => {
   selectedSlot.value = null;
 });
 </script>
+
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap");

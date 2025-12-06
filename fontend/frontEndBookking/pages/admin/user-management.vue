@@ -73,6 +73,7 @@
 definePageMeta({ layout: "admin" })
 
 import { ref, onMounted } from "vue"
+import { useCookie, navigateTo } from "#app"
 
 /* -------------------- STATE -------------------- */
 const users = ref<any[]>([])
@@ -89,19 +90,20 @@ const form = ref({
   role: "USER",
 })
 
-/* -------------------- AUTH HEADERS -------------------- */
+/* -------------------- AUTH (Cookie) -------------------- */
+const token = useCookie<string | null>("token")
+
 function getHeaders() {
-  const token = localStorage.getItem("authToken")
   return {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(token.value && { Authorization: `Bearer ${token.value}` })
   }
 }
 
-function handle401() {
-  localStorage.removeItem("authToken")
+function handleUnauthorized() {
+  token.value = null
   alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
-  navigateTo("/login")
+  navigateTo("/")
 }
 
 /* -------------------- FETCH USERS -------------------- */
@@ -111,7 +113,7 @@ async function fetchUsers() {
       headers: getHeaders(),
     })
 
-    if (res.status === 401) return handle401()
+    if (res.status === 401) return handleUnauthorized()
 
     const data = await res.json()
     users.value = data.data || data
@@ -136,7 +138,7 @@ function resetForm() {
 
 /* -------------------- EDIT USER -------------------- */
 function editUser(u: any) {
-  form.value = { ...u, password: "" } // ไม่โชว์รหัสผ่าน
+  form.value = { ...u, password: "" }
   isEditing.value = true
 }
 
@@ -155,7 +157,7 @@ async function deleteUser(id: number) {
       headers: getHeaders(),
     })
 
-    if (res.status === 401) return handle401()
+    if (res.status === 401) return handleUnauthorized()
 
     success.value = "ลบผู้ใช้สำเร็จ"
     fetchUsers()
@@ -182,7 +184,7 @@ async function handleSubmit() {
       body: JSON.stringify(form.value),
     })
 
-    if (res.status === 401) return handle401()
+    if (res.status === 401) return handleUnauthorized()
 
     success.value = isEditing.value
       ? "อัปเดตข้อมูลสำเร็จ"
@@ -198,11 +200,11 @@ async function handleSubmit() {
 
 /* -------------------- INIT -------------------- */
 onMounted(() => {
-  const token = localStorage.getItem("authToken")
-  if (!token) return navigateTo("/login")
+  if (!token.value) return navigateTo("/")
   fetchUsers()
 })
 </script>
+
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');

@@ -104,11 +104,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
+import { useCookie, navigateTo } from "#app"
 
-// ใช้ navigateTo ของ Nuxt
 definePageMeta({ layout: "admin" })
 
-/* ---------------------- TYPE ---------------------- */
+/* ---------- TYPE ---------- */
 interface Slot {
   id: number
   slotName: string
@@ -118,7 +118,23 @@ interface Slot {
   status: "AVAILABLE" | "BOOKED"
 }
 
-/* ---------------------- STATE ---------------------- */
+/* ---------- AUTH ---------- */
+const token = useCookie<string | null>("token")
+
+function getAuthHeaders() {
+  return {
+    "Content-Type": "application/json",
+    ...(token.value && { Authorization: `Bearer ${token.value}` })
+  }
+}
+
+function handleUnauthorized() {
+  token.value = null
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
+  navigateTo("/")
+}
+
+/* ---------- STATE ---------- */
 const slots = ref<Slot[]>([])
 const loading = ref(false)
 const selectedDate = ref("")
@@ -133,44 +149,31 @@ const editSlotData = ref<Slot>({
   status: "AVAILABLE",
 })
 
-/* ---------------------- AUTH HEADER ---------------------- */
-function getAuthHeaders() {
-  const token = localStorage.getItem("authToken")
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  }
-}
-
-/* ---------------------- FILTER SLOT ---------------------- */
+/* ---------- FILTER ---------- */
 const filteredSlots = computed(() => {
   if (!selectedDate.value) return slots.value
   return slots.value.filter((slot) => slot.date === selectedDate.value)
 })
 
-/* ---------------------- NAVIGATION ---------------------- */
+/* ---------- NAV ---------- */
 function goToSlotManagement() {
   navigateTo("/admin/slot-management")
 }
 
-/* ---------------------- FORMAT TIME ---------------------- */
+/* ---------- FORMAT TIME ---------- */
 function formatTime(value: string) {
   if (!value) return "ไม่มีเวลา"
-
-  // case: "0900" → "09:00"
   if (value.length === 4) {
     value = value.slice(0, 2) + ":" + value.slice(2)
   }
-
   return value
 }
 
-/* ---------------------- CLEAR FILTER ---------------------- */
 function clearDateFilter() {
   selectedDate.value = ""
 }
 
-/* ---------------------- OPEN / CLOSE DIALOG ---------------------- */
+/* ---------- EDIT DIALOG ---------- */
 function openEditDialog(slot: Slot) {
   editSlotData.value = { ...slot }
   editDialog.value?.showModal()
@@ -180,7 +183,7 @@ function closeEditDialog() {
   editDialog.value?.close()
 }
 
-/* ---------------------- SAVE EDIT ---------------------- */
+/* ---------- SAVE EDIT ---------- */
 async function saveEdit() {
   const payload = { ...editSlotData.value }
 
@@ -191,11 +194,11 @@ async function saveEdit() {
   })
 
   if (!res.ok) {
+    if (res.status === 401) return handleUnauthorized()
     alert("แก้ไข Slot ไม่สำเร็จ")
     return
   }
 
-  // update local list
   const index = slots.value.findIndex((s) => s.id === payload.id)
   if (index !== -1) slots.value[index] = payload
 
@@ -203,7 +206,7 @@ async function saveEdit() {
   closeEditDialog()
 }
 
-/* ---------------------- DELETE SLOT ---------------------- */
+/* ---------- DELETE ---------- */
 async function deleteSlot(id: number) {
   if (!confirm("ต้องการลบ Slot นี้หรือไม่?")) return
 
@@ -213,6 +216,7 @@ async function deleteSlot(id: number) {
   })
 
   if (!res.ok) {
+    if (res.status === 401) return handleUnauthorized()
     alert("ลบ Slot ไม่สำเร็จ")
     return
   }
@@ -221,7 +225,7 @@ async function deleteSlot(id: number) {
   alert("ลบสำเร็จ")
 }
 
-/* ---------------------- FETCH SLOTS ---------------------- */
+/* ---------- FETCH ---------- */
 async function fetchSlots() {
   loading.value = true
 
@@ -229,21 +233,21 @@ async function fetchSlots() {
     headers: getAuthHeaders(),
   })
 
-  if (res.status === 401) {
-    localStorage.removeItem("authToken")
-    return navigateTo("/login")
-  }
+  if (res.status === 401) return handleUnauthorized()
 
   const data = await res.json()
-
-  // backend อาจส่งเป็น { data: [...] }
   slots.value = data.data || data
 
   loading.value = false
 }
 
-onMounted(fetchSlots)
+/* ---------- MOUNT ---------- */
+onMounted(() => {
+  if (!token.value) return navigateTo("/")
+  fetchSlots()
+})
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");

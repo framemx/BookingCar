@@ -92,109 +92,115 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: "admin" });
+definePageMeta({ layout: "admin" })
 
-import { ref } from "vue";
+import { ref, onMounted } from "vue"
+import { useCookie, navigateTo } from "#app"
 
 /* ------------------ TYPE ------------------ */
 interface SlotItem {
-  date: string;
-  startTime: string;
-  endTime: string;
-  slotName: string;
-  status: "AVAILABLE" | "BOOKED";
+  date: string
+  startTime: string
+  endTime: string
+  slotName: string
+  status: "AVAILABLE" | "BOOKED"
+}
+
+/* ------------------ AUTH ------------------ */
+const token = useCookie<string | null>("token")
+
+function getAuthHeaders() {
+  return {
+    "Content-Type": "application/json",
+    ...(token.value && { Authorization: `Bearer ${token.value}` })
+  }
+}
+
+function handleUnauthorized() {
+  token.value = null
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
+  navigateTo("/")
 }
 
 /* ------------------ STATE ------------------ */
-const slotCount = ref<number>(1);
-const slots = ref<SlotItem[]>([]);
-
-/* ------------------ AUTH ------------------ */
-function getAuthHeaders() {
-  const token = localStorage.getItem("authToken");
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-}
+const slotCount = ref<number>(1)
+const slots = ref<SlotItem[]>([])
 
 /* ------------------ HELPERS ------------------ */
 function getTodayDateString() {
-  const d = new Date();
+  const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()
-  ).padStart(2, "0")}`;
+  ).padStart(2, "0")}`
 }
 
 /* ------------------ GENERATE ------------------ */
 function generateSlots() {
-  const today = getTodayDateString();
+  const today = getTodayDateString()
   slots.value = Array.from({ length: slotCount.value }, (_, i) => ({
     date: today,
     startTime: "09:00",
     endTime: "16:00",
     slotName: `Slot ${i + 1}`,
-    status: "AVAILABLE",
-  }));
+    status: "AVAILABLE"
+  }))
 }
 
 /* ------------------ SLOT COUNTER ------------------ */
 function increaseSlot() {
-  slotCount.value++;
+  slotCount.value++
 }
 
 function decreaseSlot() {
-  if (slotCount.value > 1) slotCount.value--;
+  if (slotCount.value > 1) slotCount.value--
 }
 
 /* ------------------ REMOVE ------------------ */
 function removeSlot(index: number) {
-  slots.value.splice(index, 1);
+  slots.value.splice(index, 1)
 }
 
 /* ------------------ SAVE ------------------ */
 async function saveSlots() {
   if (slots.value.length === 0) {
-    return alert("กรุณาสร้าง Slot ก่อนบันทึก");
+    return alert("กรุณาสร้าง Slot ก่อนบันทึก")
   }
 
   for (const slot of slots.value) {
     if (!slot.date || !slot.startTime || !slot.endTime || !slot.slotName) {
-      alert(`ข้อมูลไม่ครบถ้วนใน Slot "${slot.slotName}"`);
-      return;
+      alert(`ข้อมูลไม่ครบถ้วนใน Slot "${slot.slotName}"`)
+      return
     }
 
     if (slot.startTime >= slot.endTime) {
-      alert(`Slot "${slot.slotName}" เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด`);
-      return;
+      alert(`Slot "${slot.slotName}" เวลาเริ่มต้องน้อยกว่าสิ้นสุด`)
+      return
     }
 
-    try {
-      const res = await fetch("http://localhost:3000/slots", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(slot),
-      });
+    const res = await fetch("http://localhost:3000/slots", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(slot)
+    })
 
-      if (res.status === 401) {
-        localStorage.removeItem("authToken");
-        alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
-        return navigateTo("/login");
-      }
+    if (res.status === 401) return handleUnauthorized()
 
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.error || "ไม่สามารถบันทึกข้อมูล Slot");
-      }
-    } catch (err: any) {
-      alert(err.message);
-      return;
+    const data = await res.json()
+    if (!res.ok) {
+      alert(data.error || "เกิดข้อผิดพลาดในการบันทึก Slot")
+      return
     }
   }
 
-  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว 🎉");
+  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว 🎉")
 }
+
+/* ------------------ MOUNT ------------------ */
+onMounted(() => {
+  if (!token.value) return navigateTo("/")
+})
 </script>
+
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");

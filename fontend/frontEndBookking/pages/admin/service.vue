@@ -140,13 +140,31 @@
 definePageMeta({ layout: "admin" })
 
 import { ref, reactive, onMounted } from "vue"
+import { useCookie, navigateTo } from "#app"
 
+/* ---------------- TYPE ---------------- */
 interface Service {
   id: number
   sName: string
   description: string
   price: number
   durationMinutes: number
+}
+
+/* ---------------- AUTH ---------------- */
+const token = useCookie<string | null>("token")
+
+function getAuthHeaders() {
+  return {
+    "Content-Type": "application/json",
+    ...(token.value && { Authorization: `Bearer ${token.value}` })
+  }
+}
+
+function handleUnauthorized() {
+  token.value = null
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
+  navigateTo("/")
 }
 
 /* ---------------- STATE ---------------- */
@@ -158,7 +176,7 @@ const showDeleteModal = ref(false)
 
 const serviceToDelete = ref<Service | null>(null)
 
-const newService = reactive({
+const newService = reactive<Omit<Service, "id">>({
   sName: "",
   description: "",
   price: 0,
@@ -173,22 +191,7 @@ const editServiceData = reactive<Service>({
   durationMinutes: 1
 })
 
-/* ---------------- AUTH ---------------- */
-function getAuthHeaders() {
-  const token = localStorage.getItem("authToken")
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` })
-  }
-}
-
-function handleUnauthorized() {
-  localStorage.removeItem("authToken")
-  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
-  navigateTo("/login")
-}
-
-/* ---------------- CRUD ---------------- */
+/* ---------------- FETCH ---------------- */
 async function fetchServices() {
   const res = await fetch("http://localhost:3000/services", {
     headers: getAuthHeaders()
@@ -200,7 +203,7 @@ async function fetchServices() {
   services.value = data.data || []
 }
 
-/* CREATE */
+/* ---------------- CREATE ---------------- */
 async function submitNewService() {
   const res = await fetch("http://localhost:3000/services", {
     method: "POST",
@@ -224,14 +227,14 @@ function closeAddModal() {
   })
 }
 
-/* UPDATE */
+/* ---------------- UPDATE ---------------- */
 function openEditModal(service: Service) {
   Object.assign(editServiceData, service)
   showEditModal.value = true
 }
 
 function closeEditModal() {
-  showEditModal.value = false
+  showEditModal.value = false;
 }
 
 async function submitEditService() {
@@ -246,19 +249,19 @@ async function submitEditService() {
 
   if (!res.ok) return alert("แก้ไขบริการไม่สำเร็จ")
 
-  closeEditModal()
+  showEditModal.value = false
   fetchServices()
 }
 
-/* DELETE */
+/* ---------------- DELETE ---------------- */
 function confirmDelete(service: Service) {
   serviceToDelete.value = service
   showDeleteModal.value = true
 }
 
 function cancelDelete() {
-  showDeleteModal.value = false
   serviceToDelete.value = null
+  showDeleteModal.value = false
 }
 
 async function deleteService() {
@@ -278,13 +281,13 @@ async function deleteService() {
   fetchServices()
 }
 
+/* ---------------- MOUNT ---------------- */
 onMounted(() => {
-  const token = localStorage.getItem("authToken")
-  if (!token) return navigateTo("/login")
-
+  if (!token.value) return navigateTo("/")
   fetchServices()
 })
 </script>
+
 
 
 

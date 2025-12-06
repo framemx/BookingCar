@@ -124,6 +124,11 @@
 </template>
 
 <script setup lang="ts">
+
+definePageMeta({
+  middleware: ["admin"]
+})
+
 const showMobileMenu = ref(false)
 
 const route = useRoute()
