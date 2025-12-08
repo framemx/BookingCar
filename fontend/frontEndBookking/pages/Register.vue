@@ -58,6 +58,7 @@ const password = ref("");
 const phone = ref("");
 const error = ref("");
 const success = ref("");
+
 const glowX = ref(0);
 const glowY = ref(0);
 const router = useRouter();
@@ -111,14 +112,14 @@ async function handleRegister() {
     roleCookie.value = loginData.data.role.toLowerCase(); // ⭐ สำคัญที่สุด
 
     // เก็บเพิ่มใน localStorage (optional)
-    localStorage.setItem(
-      "userData",
-      JSON.stringify({
-        name: loginData.data.name,
-        email: loginData.data.email,
-        role: loginData.data.role.toLowerCase(),
-      })
-    );
+    // localStorage.setItem(
+    //   "userData",
+    //   JSON.stringify({
+    //     name: loginData.data.name,
+    //     email: loginData.data.email,
+    //     role: loginData.data.role.toLowerCase(),
+    //   })
+    // );
 
     // ⭐ พาผู้ใช้ไปหน้า user
     router.push("/user/home");

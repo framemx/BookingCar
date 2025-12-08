@@ -143,6 +143,7 @@ import { ref, reactive, onMounted } from "vue"
 import { useCookie, navigateTo } from "#app"
 
 /* ---------------- TYPE ---------------- */
+// กำหนดว่าบริการ 1 ตัวต้องมีข้อมูลอะไรบ้าง
 interface Service {
   id: number
   sName: string
@@ -152,8 +153,10 @@ interface Service {
 }
 
 /* ---------------- AUTH ---------------- */
+// อ่าน token จาก cookie
 const token = useCookie<string | null>("token")
 
+// header สำหรับส่งไป backend
 function getAuthHeaders() {
   return {
     "Content-Type": "application/json",
@@ -161,6 +164,7 @@ function getAuthHeaders() {
   }
 }
 
+// กรณี token หมดอายุ
 function handleUnauthorized() {
   token.value = null
   alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
@@ -170,12 +174,15 @@ function handleUnauthorized() {
 /* ---------------- STATE ---------------- */
 const services = ref<Service[]>([])
 
+// เก็บ list บริการทั้งหมด
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 
+// ควบคุม modal ต่าง ๆ
 const serviceToDelete = ref<Service | null>(null)
 
+// เก็บ service ที่เลือกจะลบ
 const newService = reactive<Omit<Service, "id">>({
   sName: "",
   description: "",
@@ -183,6 +190,7 @@ const newService = reactive<Omit<Service, "id">>({
   durationMinutes: 1
 })
 
+// ข้อมูลของบริการที่เพิ่มใหม่
 const editServiceData = reactive<Service>({
   id: 0,
   sName: "",
@@ -192,6 +200,7 @@ const editServiceData = reactive<Service>({
 })
 
 /* ---------------- FETCH ---------------- */
+// FETCH — โหลดบริการทั้งหมด
 async function fetchServices() {
   const res = await fetch("http://localhost:3000/services", {
     headers: getAuthHeaders()
@@ -204,6 +213,8 @@ async function fetchServices() {
 }
 
 /* ---------------- CREATE ---------------- */
+// ส่งข้อมูลบริการใหม่ไป backend
+// ถ้าสำเร็จ → ปิด modal และรีโหลดรายการบริการ
 async function submitNewService() {
   const res = await fetch("http://localhost:3000/services", {
     method: "POST",
@@ -217,6 +228,7 @@ async function submitNewService() {
   fetchServices()
 }
 
+// ปุ่มปิด Modal + รีเซ็ตฟอร์ม
 function closeAddModal() {
   showAddModal.value = false
   Object.assign(newService, {
@@ -228,15 +240,18 @@ function closeAddModal() {
 }
 
 /* ---------------- UPDATE ---------------- */
+// เปิด modal พร้อมโหลดข้อมูลเดิม
 function openEditModal(service: Service) {
   Object.assign(editServiceData, service)
   showEditModal.value = true
 }
 
+// ปุ่มปิด Modal + รีเซ็ตฟอร์ม
 function closeEditModal() {
   showEditModal.value = false;
 }
 
+// ส่งข้อมูลแก้ไขไป backend
 async function submitEditService() {
   const res = await fetch(
     `http://localhost:3000/services/${editServiceData.id}`,
@@ -282,6 +297,9 @@ async function deleteService() {
 }
 
 /* ---------------- MOUNT ---------------- */
+// โหลดข้อมูลทันทีเมื่อเข้าเพจ
+// ถ้าไม่มี token → เด้งไปหน้า login
+// ถ้ามี → โหลดรายการบริการทั้งหมด
 onMounted(() => {
   if (!token.value) return navigateTo("/")
   fetchServices()

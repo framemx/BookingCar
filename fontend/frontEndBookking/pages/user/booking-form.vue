@@ -112,16 +112,20 @@ definePageMeta({
 
 const router = useRouter();
 
+// State ตัวแปรหลักที่ใช้ในหน้านี้
 const date = ref("");
 const selectedSlot = ref<any>(null);
 const selectedServices = ref<number[]>([]);
 const services = ref<any[]>([]);
 const slots = ref<any[]>([]);
 const confirmedBookings = ref<any[]>([]);
+
+
 const dropdownOpen = ref(false);
 
 /* ---------------- AUTH: ใช้ Cookie แทน localStorage ---------------- */
 
+//  (ถ้ามี Token) จะมีการใส่ Header Authorization: Bearer ... เข้าไปโดยอัตโนมัติ
 function getAuthHeaders() {
   const token = useCookie("token").value;
 
@@ -132,15 +136,16 @@ function getAuthHeaders() {
 }
 
 /* ----------------- Dropdown ----------------- */
-
+// เป็นฟังก์ชันที่ใช้สลับสถานะ เปิด/ปิด dropdown
 const toggleDropdown = () => (dropdownOpen.value = !dropdownOpen.value);
 
 const selectSlot = (slot: any) => {
-  if (slot.booked) return;
-  selectedSlot.value = slot;
-  dropdownOpen.value = false;
+  if (slot.booked) return; // เช็คก่อนว่า slot นี้จองแล้วหรือยัง  ถ้า slot.booked == true → ห้ามเลือก และให้หยุดทำงานทันที
+  selectedSlot.value = slot;  // ถ้าเลือกได้ ให้เก็บช่วงเวลาที่เลือก
+  dropdownOpen.value = false;  // ปิด dropdown อัตโนมัติ
 };
 
+// ใช้แสดงข้อความเวลาที่ผู้ใช้เลือกใน dropdow   "09:00 - 10:00"
 const selectedSlotLabel = computed(() =>
   selectedSlot.value
     ? `${selectedSlot.value.start} - ${selectedSlot.value.end}`
@@ -153,37 +158,41 @@ const minDate = new Date().toISOString().slice(0, 10);
 
 /* ----------------- Time Helpers ----------------- */
 
+// แปลงเวลาแบบ "HH:MM" ให้กลายเป็น นาทีทั้งหมด "09:30" → 570 นาที
 const timeToMinutes = (t: string) =>
   t.split(":").map(Number).reduce((h, m) => h * 60 + m);
 
+// แปลง “จำนวนนาที” → เป็นเวลา "HH:MM"
 const minutesToTime = (m: number) =>
   `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(
     2,
     "0"
   )}`;
 
+// ฟังก์ชันนี้ใช้เพื่อ สร้างช่วงเวลา (slot) แบบรายชั่วโมง
 const generateHourlySlots = (start: string, end: string) => {
   const out = [];
+  // แปลงเวลาเริ่มต้นและเวลาสิ้นสุดเป็น "นาทีทั้งหมด"
   let s = timeToMinutes(start);
   let e = timeToMinutes(end);
-  for (let i = s; i < e; i += 60) {
-    out.push({
-      start: minutesToTime(i),
-      end: minutesToTime(Math.min(i + 60, e)),
+  for (let i = s; i < e; i += 60) { // loop เพิ่มละ 2 นาที
+    out.push({    // สร้าง slot และ push ใส่ array
+      start: minutesToTime(i),      // แปลง i (นาที) → เวลา "HH:MM"
+      end: minutesToTime(Math.min(i + 60, e)),    // ถ้าเวลา end คือ "12:00 ลูปสุดท้าย i = 660 → i + 60 = 720 → ไม่เกิน → ใช้ได้
     });
   }
-  return out;
+  return out;   // ตืนค่า
 };
 
 /* ----------------- Available Slots ----------------- */
 
-const availableSlots = computed(() => {
-  if (!date.value) return [];
+const availableSlots = computed(() => {   // เมื่อค่า date, slots, confirmedBookings เปลี่ยน → คำนวณใหม่ทันที
+  if (!date.value) return [];     // ถ้ายังไม่ได้เลือกวันที่ → ไม่ต้องโชว์ slot
 
   return slots.value
-    .filter((s) => s.date === date.value)
+    .filter((s) => s.date === date.value)   // เลือกเฉพาะ slot ที่เป็นของวันที่ที่ผู้ใช้เลือก
     .flatMap((slot) => {
-      const hourly = generateHourlySlots(slot.startTime, slot.endTime).map(
+      const hourly = generateHourlySlots(slot.startTime, slot.endTime).map(   // สำหรับแต่ละ slot แบบ 09:00–15:00 → แตกเป็นจำนวนชั่วโมง ได้ 09:00–10:00 , 10:00–11:00  , 11:00–12:00
         (h) => ({
           ...h,
           slotId: slot.id,
@@ -191,11 +200,16 @@ const availableSlots = computed(() => {
         })
       );
 
-      return hourly.map((hour) => {
-        const start = new Date(`${date.value}T${hour.start}:00`);
+      return hourly.map((hour) => {   // เช็คแต่ละชั่วโมงว่า "ถูกจองแล้วหรือยัง?"
+        
+        // แปลงเวลาชั่วโมงให้เป็น Date object เพื่อคำนวณทับซ้อนเวลา
+        const start = new Date(`${date.value}T${hour.start}:00`);     
         const end = new Date(`${date.value}T${hour.end}:00`);
 
+        // ตรวจสอบว่า slot นี้ชนกับการจองจริงไหม
         const isBooked = confirmedBookings.value.some((b: any) => {
+
+          // เงื่อนไข: ต้องมีสถานะ “confirmed” เท่านั้น
           if (
             b.status !== "confirmed" ||
             !b.bookingSlots?.some((bs: any) => bs.slotId === slot.id)
@@ -203,6 +217,7 @@ const availableSlots = computed(() => {
             return false;
           }
 
+          // หา “เวลาเริ่มต้นจริง” ของการจองนั้น ถ้าจองหลายบริการ (multi service slot) → ใช้ "เวลาที่เริ่มต้นเร็วที่สุด"
           const bookingStart = new Date(
             Math.min(
               ...b.bookingSlots.map((bs: any) =>
@@ -211,6 +226,7 @@ const availableSlots = computed(() => {
             )
           );
 
+          // คำนวณ ระยะเวลารวม ของบริการที่ลูกค้าเลือก
           const totalDuration =
             b.bookingServices?.reduce(
               (sum: number, bs: any) =>
@@ -218,20 +234,29 @@ const availableSlots = computed(() => {
               0
             ) || 0;
 
+          // คำนวณเวลา “จบจริง” ของการจอง
           const bookingEnd = new Date(
             bookingStart.getTime() + totalDuration * 60000
           );
 
+          // ตรวจว่ามีการ “ทับซ้อนเวลา” กับช่วงที่กำลังสร้างไหม?
           return bookingStart < end && bookingEnd > start;
         });
 
+        // ส่งกลับข้อมูลของชั่วโมงนั้น พร้อมบอกว่า booked ไหม
         return { ...hour, booked: isBooked };
       });
     });
 });
 
-/* ----------------- Group Slots (แก้ error ตัวแดง) ----------------- */
 
+// จัดกลุ่มตามชื่อช่องบริการ
+// ช่องบริการ A
+//   09:00 - 10:00
+//   10:00 - 11:00
+
+// ช่องบริการ B
+//   09:00 - 10:00
 const groupedSlots = computed(() => {
   const groups: Record<string, any[]> = {};
 
@@ -247,7 +272,7 @@ const groupedSlots = computed(() => {
 });
 
 /* ----------------- Summary ----------------- */
-
+// คำนวนราคา
 const totalDuration = computed(() =>
   selectedServices.value.reduce((sum, id) => {
     const svc = services.value.find((s) => s.id === id);
@@ -255,6 +280,7 @@ const totalDuration = computed(() =>
   }, 0)
 );
 
+// คำนวนเวลา
 const totalPrice = computed(() =>
   selectedServices.value.reduce((sum, id) => {
     const svc = services.value.find((s) => s.id === id);
@@ -262,6 +288,7 @@ const totalPrice = computed(() =>
   }, 0)
 );
 
+// ตัวอนุญาตให้กดปุ่มจอง” ถ้าอย่างใดอย่างหนึ่งไม่ครบ
 const canSubmit = computed(
   () =>
     date.value &&
@@ -271,7 +298,7 @@ const canSubmit = computed(
 );
 
 /* ----------------- Fetch APIs ----------------- */
-
+// ดึงข้อมูล ช่วงเวลาทำงานของร้าน ใช้สร้าง availableSlots → ให้ผู้ใช้เลือกเวลาจอง เก็บใน slots.value
 const fetchSlots = async () => {
   const res = await fetch("http://localhost:3000/slots", {
     headers: getAuthHeaders(),
@@ -279,6 +306,7 @@ const fetchSlots = async () => {
   slots.value = await res.json();
 };
 
+// โหลด "รายการบริการ" เช่น ล้างรถ เคลือบสี ดูดฝุ่น ฯลฯ เก็บลง services.value เพื่อให้ผู้ใช้กดเลือกบริการ
 const fetchServices = async () => {
   const res = await fetch("http://localhost:3000/services", {
     headers: getAuthHeaders(),
@@ -287,6 +315,7 @@ const fetchServices = async () => {
   services.value = data.data || [];
 };
 
+// โหลดข้อมูลการจองทั้งหมดจาก backend กรองเฉพาะรายการที่ สถานะ = confirmed (คือการจองที่ได้รับการอนุมัติแล้ว) เอาไปเช็คเวลาทับซ้อนใน availableSlots
 const fetchConfirmedBookings = async () => {
   const res = await fetch("http://localhost:3000/bookings", {
     headers: getAuthHeaders(),
@@ -298,9 +327,10 @@ const fetchConfirmedBookings = async () => {
 /* ----------------- Submit Booking ----------------- */
 
 const submitBooking = async () => {
-  const userId = useCookie("id").value;
-  if (!userId) return alert("กรุณาเข้าสู่ระบบใหม่");
+  const userId = useCookie("id").value;   // ดึง userId จาก cookie
+  if (!userId) return alert("กรุณาเข้าสู่ระบบใหม่");   // ถ้าไม่มี userId → ให้ล็อกอินใหม่
 
+  // สร้าง payload สำหรับส่งไป backend
   const payload = {
     userId,
     bookingDate: date.value,
@@ -316,6 +346,7 @@ const submitBooking = async () => {
     ],
   };
 
+  // ส่งข้อมูลจองไป backend
   const res = await fetch("http://localhost:3000/bookings", {
     method: "POST",
     headers: getAuthHeaders(),
@@ -324,8 +355,10 @@ const submitBooking = async () => {
 
   const booking = await res.json();
 
+  // ถ้าจองไม่สำเร็จ
   if (!res.ok) return alert(booking.error || "จองไม่สำเร็จ");
 
+  // ไปหน้า success
   router.push({
     path: "/user/booking-welcome",
     query: { bookingId: booking.id },
@@ -334,12 +367,14 @@ const submitBooking = async () => {
 
 /* ----------------- Init ----------------- */
 
+// โหลดข้อมูลตอนเปิดหน้า
 onMounted(async () => {
   await fetchSlots();
   await fetchServices();
   await fetchConfirmedBookings();
 });
 
+// เมื่อผู้ใช้เปลี่ยนวัน
 watch(date, () => {
   selectedSlot.value = null;
 });

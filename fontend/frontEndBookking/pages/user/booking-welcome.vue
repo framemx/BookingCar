@@ -158,6 +158,7 @@ definePageMeta({
 });
 
 const router = useRouter();
+
 const userId = useCookie("id").value;
 const userEmail = ref(useCookie("email").value || "-");
 const userName = ref(useCookie("name").value || "ผู้ใช้");
@@ -177,17 +178,23 @@ const expandedSlot = ref<number | null>(null);
 
 /* ---------------- HELPERS ---------------- */
 
+// แปลง ISO → เวลาไทย
 function toThaiTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString("th-TH", {
-    hour: "2-digit",
+    // แสดงชั่วโมงเป็นตัวเลข 2 หลัก (เช่น 09, 15)
+    hour: "2-digit", 
+    // แสดงนาทีเป็นตัวเลข 2 หลัก (เช่น 05, 30)
     minute: "2-digit",
   });
 }
 
+// "ห่อ” ฟังก์ชัน toThaiTime อีกที
+// เพื่อให้โค้ดอ่านง่ายขึ้นเวลาเรียกใช้
 function formatTime(dt: string) {
   return toThaiTime(dt);
 }
 
+// แสดงวันที่เป็นไทย เช่น "วันอาทิตย์ที่ 6 ธันวาคม 2568"
 function formatDateDisplay(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("th-TH", {
     weekday: "long",
@@ -197,8 +204,11 @@ function formatDateDisplay(dateStr: string) {
   });
 }
 
+// ใช้ในหน้าเพื่อเช็คว่า "วันนี้คือวันอะไร"
+// ใช้กำหนดค่า default ของ selectedDate (ใน onMounted)
 const todayDate = new Date().toISOString().slice(0, 10);
 
+// แปลง “จำนวนเวลาเป็นนาที” ให้เป็นข้อความอ่านง่าย
 function formatDuration(min: number) {
   if (!min) return "0 นาที";
 
@@ -210,10 +220,13 @@ function formatDuration(min: number) {
   return m === 0 ? `${h} ชม.` : `${h} ชม. ${m} นาที`;
 }
 
+// ใช้เปิด–ปิดรายละเอียดของ slot
 function toggleSlot(id: number) {
   expandedSlot.value = expandedSlot.value === id ? null : id;
 }
 
+// เวลาเรียก API ต้องมี Header
+// ถ้ามี token → ใส่ Authorization: Bearer token ให้ backend ตรวจสิทธิ์ได้  Authorization: Bearer <JWT token>
 function getHeaders(): HeadersInit {
   const token = useCookie("token").value;
   return token
@@ -222,7 +235,7 @@ function getHeaders(): HeadersInit {
 }
 
 /* ---------------- SLOT RANGE GENERATION ---------------- */
-
+// เวลา slot มีช่วงเวลา เช่น 10:00–13:00 → ต้องแยกเป็นช่วงชั่วโมง คือ 10:00–11:00 , 11:00–12:00 , 12:00–13:00
 function generateTimeRanges(slot: any) {
   const ranges = [];
   let start = new Date(slot.startTime);
@@ -246,7 +259,7 @@ function generateTimeRanges(slot: any) {
 }
 
 /* ---------------- FETCH ---------------- */
-
+//  ดึง slot ทั้งหมด  สร้าง timeRanges ในแต่ละ slot ด้วย
 async function fetchSlots() {
   const res = await fetch("http://localhost:3000/slots", {
     headers: getHeaders(),
@@ -262,11 +275,13 @@ async function fetchSlots() {
       startTime,
       endTime,
       status: "AVAILABLE",
+      // เวลา slot มีช่วงเวลา เช่น 10:00–13:00
       timeRanges: generateTimeRanges({ startTime, endTime }),
     };
   });
 }
 
+// ดึง booking ทั้งหมด (ใช้ mark ว่าสล็อตไหนถูกจองแล้ว)
 async function fetchAllBookings() {
   const res = await fetch("http://localhost:3000/bookings", {
     headers: getHeaders(),
@@ -274,6 +289,7 @@ async function fetchAllBookings() {
   allBookings.value = await res.json();
 }
 
+// ดึง booking ของ user , คิดเวลาสิ้นสุดอัตโนมัติ
 async function fetchUserBookings() {
   const email = useCookie("email").value;
   if (!email) return;
@@ -313,7 +329,7 @@ interface TimeRange {
 }
 
 /* ---------------- APPLY BOOKING STATUS TO SLOTS ---------------- */
-
+// ถ้าช่วงเวลา booking หนึ่งซ้อนกับช่วงเวลา timeRange → ถือว่า “จองแล้ว”
 function markSlotStatus() {
   slots.value.forEach((slot) => {
     const slotBookings = allBookings.value.filter(
@@ -342,11 +358,12 @@ function markSlotStatus() {
 }
 
 /* ---------------- COMPUTED ---------------- */
-
+// หา slot ของวันที่เลือก & คิวของวันนี้ -> ตามวันที่ผู้ใช้เลือก
 const slotsOfSelectedDate = computed(() =>
   slots.value.filter((s) => s.date === selectedDate.value)
 );
 
+// หา slot ของวันที่เลือก & คิวของวันนี้ ตามวันที่ผู้ใช้เลือก -> คิวของวันนี้ 
 const todayBookings = computed(() => {
   const todayStr = new Date().toLocaleDateString("en-CA");
   // en-CA = YYYY-MM-DD มาตรฐาน

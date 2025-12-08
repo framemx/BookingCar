@@ -62,6 +62,8 @@ const logoUrl = "/images/logo.jpg";
 const email = ref("");
 const password = ref("");
 const error = ref("");
+
+// เอฟเฟกต์ Mouse Glow
 const glowX = ref(0);
 const glowY = ref(0);
 const router = useRouter();

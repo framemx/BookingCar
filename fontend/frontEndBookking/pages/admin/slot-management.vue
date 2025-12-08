@@ -82,9 +82,7 @@
         </div>
       </div>
 
-      <button class="btn-remove" @click="removeSlot(index)">
-        ลบ
-      </button>
+      <button class="btn-remove" @click="removeSlot(index)">ลบ</button>
     </div>
 
     <button class="btn-save" @click="saveSlots">💾 บันทึก Slot</button>
@@ -92,115 +90,121 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: "admin" })
+definePageMeta({ layout: "admin" });
 
-import { ref, onMounted } from "vue"
-import { useCookie, navigateTo } from "#app"
+import { ref, onMounted } from "vue";
+import { useCookie, navigateTo } from "#app";
 
 /* ------------------ TYPE ------------------ */
 interface SlotItem {
-  date: string
-  startTime: string
-  endTime: string
-  slotName: string
-  status: "AVAILABLE" | "BOOKED"
+  date: string;
+  startTime: string;
+  endTime: string;
+  slotName: string;
+  status: "AVAILABLE" | "BOOKED";
 }
 
 /* ------------------ AUTH ------------------ */
-const token = useCookie<string | null>("token")
+const token = useCookie<string | null>("token");
 
 function getAuthHeaders() {
   return {
     "Content-Type": "application/json",
-    ...(token.value && { Authorization: `Bearer ${token.value}` })
-  }
+    ...(token.value && { Authorization: `Bearer ${token.value}` }),
+  };
 }
 
 function handleUnauthorized() {
-  token.value = null
-  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่")
-  navigateTo("/")
+  token.value = null;
+  alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+  navigateTo("/");
 }
 
 /* ------------------ STATE ------------------ */
-const slotCount = ref<number>(1)
-const slots = ref<SlotItem[]>([])
+const slotCount = ref<number>(1);   // จำนวน slot ที่ต้องการสร้าง
+const slots = ref<SlotItem[]>([]);  // array ของ slot ทั้งหมดที่ถูกสร้าง
 
 /* ------------------ HELPERS ------------------ */
 function getTodayDateString() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
-  ).padStart(2, "0")}`
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /* ------------------ GENERATE ------------------ */
+// สร้าง array โดยมี Slot ตามจำนวนที่เลือก
+// ใช้จำนวน slot (slotCount.value) สร้าง array ใหม่ ใส่ค่า default ให้ user สามารถแก้ต่อได้เลย
 function generateSlots() {
-  const today = getTodayDateString()
+  const today = getTodayDateString();
   slots.value = Array.from({ length: slotCount.value }, (_, i) => ({
     date: today,
     startTime: "09:00",
     endTime: "16:00",
     slotName: `Slot ${i + 1}`,
-    status: "AVAILABLE"
-  }))
+    status: "AVAILABLE",
+  }));
 }
 
 /* ------------------ SLOT COUNTER ------------------ */
+// เพิ่มจำนวน slot
 function increaseSlot() {
-  slotCount.value++
+  slotCount.value++;
 }
 
+// ลดจำนวน slot (แต่ไม่ต่ำกว่า 1)
 function decreaseSlot() {
-  if (slotCount.value > 1) slotCount.value--
+  if (slotCount.value > 1) slotCount.value--;
 }
 
 /* ------------------ REMOVE ------------------ */
+// ลบ slot อันที่เลือกออกจาก array ทันที
 function removeSlot(index: number) {
-  slots.value.splice(index, 1)
+  slots.value.splice(index, 1);
 }
 
 /* ------------------ SAVE ------------------ */
 async function saveSlots() {
   if (slots.value.length === 0) {
-    return alert("กรุณาสร้าง Slot ก่อนบันทึก")
+    return alert("กรุณาสร้าง Slot ก่อนบันทึก");
   }
 
   for (const slot of slots.value) {
     if (!slot.date || !slot.startTime || !slot.endTime || !slot.slotName) {
-      alert(`ข้อมูลไม่ครบถ้วนใน Slot "${slot.slotName}"`)
-      return
+      alert(`ข้อมูลไม่ครบถ้วนใน Slot "${slot.slotName}"`);
+      return;
     }
 
     if (slot.startTime >= slot.endTime) {
-      alert(`Slot "${slot.slotName}" เวลาเริ่มต้องน้อยกว่าสิ้นสุด`)
-      return
+      alert(`Slot "${slot.slotName}" เวลาเริ่มต้องน้อยกว่าสิ้นสุด`);
+      return;
     }
 
+    // ส่ง slot ขึ้น backend “ทีละรายการ”
     const res = await fetch("http://localhost:3000/slots", {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify(slot)
-    })
+      body: JSON.stringify(slot),
+    });
 
-    if (res.status === 401) return handleUnauthorized()
+    if (res.status === 401) return handleUnauthorized();
 
-    const data = await res.json()
+    const data = await res.json();
     if (!res.ok) {
-      alert(data.error || "เกิดข้อผิดพลาดในการบันทึก Slot")
-      return
+      alert(data.error || "เกิดข้อผิดพลาดในการบันทึก Slot");
+      return;
     }
   }
 
-  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว 🎉")
+  alert("บันทึก Slot ทั้งหมดเรียบร้อยแล้ว 🎉");
 }
 
 /* ------------------ MOUNT ------------------ */
 onMounted(() => {
-  if (!token.value) return navigateTo("/")
-})
+  if (!token.value) return navigateTo("/");
+});
 </script>
-
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap");
@@ -302,6 +306,7 @@ onMounted(() => {
   border-radius: 16px;
   margin-bottom: 1.5rem;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+
 }
 
 .slot-inputs {

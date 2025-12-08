@@ -9,6 +9,7 @@
           <span class="calendar-icon">📅</span> เลือกวันที่:
         </label>
 
+        <!-- เลือกวันที่ → จะทำให้ตารางแสดงเฉพาะรายการของวันนั้น -->
         <input
           type="date"
           id="filter-date"
@@ -174,6 +175,7 @@ interface Service {
   durationMinutes: number
 }
 
+// โครงสร้าง 1 การจองหลังผ่าน mapBooking()
 interface Booking {
   id: number
   customerName: string
@@ -195,6 +197,7 @@ definePageMeta({ layout: "admin" })
 const router = useRouter()
 const tokenCookie = useCookie<string | null>("token")
 
+  // State หลักของหน้า
 const bookings = ref<Booking[]>([])
 const selectedDate = ref("")
 const openDropdown = ref<number | null>(null)
@@ -203,11 +206,14 @@ const showDetailModal = ref(false)
 const selectedBooking = ref<Booking | null>(null)
 
 /* ---------------- COMPUTED ---------------- */
+// ถ้าไม่เลือกวันที่ → แสดงทั้งหมด
+// ถ้าเลือกแล้ว → กรองเฉพาะของวันนั้น
 const filteredBookings = computed(() => {
   if (!selectedDate.value) return bookings.value
   return bookings.value.filter((b) => b.date.startsWith(selectedDate.value))
 })
 
+// ใช้ตอนเปิด Modal เพื่อจัดข้อมูลในรูปแบบ “label → value”
 const bookingDetailMap = computed(() => {
   if (!selectedBooking.value) return {}
 
@@ -225,12 +231,14 @@ const bookingDetailMap = computed(() => {
   }
 })
 
-/* ---------------- FETCH BOOKINGS ---------------- */
+/* ---------------- FETCH การจองทั้งหมด BOOKINGS ---------------- */
+// โหลดครั้งแรกตอน onMounted:
 onMounted(async () => {
-  if (!tokenCookie.value) return router.push("/")
-  await fetchBookings()
+  if (!tokenCookie.value) return router.push("/")   //เช็คว่า Cookie มีค่ามั้ยของ token มั้ย ไม่มีไปที่ /
+  await fetchBookings()   // ถ้าผ่านจะไปโหลดข้อมูลการจองทั้งหมดจาก backend
 })
 
+// โหลดข้อมูลจาก backend:
 async function fetchBookings() {
   const res = await fetch("http://localhost:3000/bookings", {
     headers: {
@@ -238,13 +246,21 @@ async function fetchBookings() {
     }
   })
 
-  const data = await res.json()
-  const list = Array.isArray(data) ? data : data.data
+  const data = await res.json()   // แปลง response ที่ได้ให้เป็นตัวแปร JavaScript
 
+    // บาง backend อาจส่งเป็น [] ตรง ๆ
+
+    // บาง backend ส่ง { data: [...] }
+    // ถ้า data เป็น array เลย → ใช้อันนั้น
+    // ถ้าไม่ใช่ → ดึง data.data
+    const list = Array.isArray(data) ? data : data.data   // 
+
+  // bookings คือ ref<Booking[]> เอา raw data ของแต่ละ booking (b) ไปแปลงให้อยู่ในรูปที่ UI ใช้ง่าย ด้วยฟังก์ชัน mapBooking ผลสุดท้าย: bookings.value จะเป็น array ของ Booking ตาม interface ที่กำหนดไว้
   bookings.value = list.map((b: any) => mapBooking(b))
 }
 
 /* ---------------- MAP FUNCTION ---------------- */
+
 function mapBooking(raw: any): Booking {
   const slots = raw.bookingSlots || []
   const services = raw.bookingServices?.map((x: any) => x.service) || []
@@ -284,31 +300,38 @@ function mapBooking(raw: any): Booking {
 }
 
 /* ---------------- ACTIONS ---------------- */
+// แปลง "2025-01-12" → "12/1/2568"
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("th-TH")
 }
 
+// เปิด pop-up รายละเอียดการจอง เซ็ต booking ที่เลือกให้ selectedBooking
 function openDetailModal(booking: Booking) {
   selectedBooking.value = booking
   showDetailModal.value = true
 }
 
+// ปิด popup
 function closeDetailModal() {
   showDetailModal.value = false
 }
 
+// สลับเปิด/ปิดเมนูเปลี่ยนสถานะของ booking นั้น
 function toggleDropdown(id: number) {
   openDropdown.value = openDropdown.value === id ? null : id
 }
 
+// แปลงสถานะเป็นข้อความไทย
 function displayStatus(status: string) {
   return status === "pending" ? "รออนุมัติ" : "ยืนยันแล้ว"
 }
 
+// confirmed → เขียว pending → เหลือง
 function statusColor(status: string) {
   return status === "confirmed" ? "status-confirmed" : "status-pending"
 }
 
+// เปลี่ยนสถานะในหน้าจอก่อน (ให้ผู้ใช้เห็นทันที) ไปเรียก updateStatus() อัปเดตลงฐานข้อมูล
 function selectStatus(booking: Booking, status: string) {
   booking.editingStatus = status
   updateStatus(booking.id, status)
@@ -326,9 +349,9 @@ async function updateStatus(id: number, status: string) {
   })
 
   if (res.ok) {
-    showPopup.value = true
+    showPopup.value = true  // ถ้าสำเร็จ → ขึ้น popup "อัปเดตสำเร็จ"
     setTimeout(() => (showPopup.value = false), 2500)
-    await fetchBookings()
+    await fetchBookings() //โหลดรายการจองทั้งหมดใหม่
   }
 }
 

@@ -40,6 +40,7 @@
 
     <!-- รายการ Slot -->
     <div v-else class="slot-list">
+      <!-- แสดงรายการ Slot ในหน้าเว็บ -->
       <div v-for="slot in filteredSlots" :key="slot.id" class="slot-item">
         <p><strong>ชื่อ Slot:</strong> {{ slot.slotName || "ไม่มีชื่อ" }}</p>
         <p><strong>วันที่:</strong> {{ slot.date }}</p>
@@ -151,11 +152,15 @@ const editSlotData = ref<Slot>({
 
 /* ---------- FILTER ---------- */
 const filteredSlots = computed(() => {
+//   จะโชว์เฉพาะ slot ที่วันที่ตรงกัน
+//   ถ้าไม่เลือกวัน → แสดงทั้งหมด
   if (!selectedDate.value) return slots.value
   return slots.value.filter((slot) => slot.date === selectedDate.value)
 })
 
+// กดแล้ว → ไปหน้าเพิ่ม Slot ใหม่
 /* ---------- NAV ---------- */
+// กดแล้ว → ไปหน้าเพิ่ม Slot ใหม่
 function goToSlotManagement() {
   navigateTo("/admin/slot-management")
 }
@@ -174,6 +179,7 @@ function clearDateFilter() {
 }
 
 /* ---------- EDIT DIALOG ---------- */
+// เปิด Dialog เพื่อแก้ไข Slot -> เอาข้อมูล slot ที่เลือกใส่เข้าไปในฟอร์มแก้ไข เปิด dialog ขึ้นมา
 function openEditDialog(slot: Slot) {
   editSlotData.value = { ...slot }
   editDialog.value?.showModal()
@@ -184,6 +190,7 @@ function closeEditDialog() {
 }
 
 /* ---------- SAVE EDIT ---------- */
+// ส่งข้อมูลแก้ไขกลับไป backend
 async function saveEdit() {
   const payload = { ...editSlotData.value }
 
@@ -226,6 +233,7 @@ async function deleteSlot(id: number) {
 }
 
 /* ---------- FETCH ---------- */
+// ไปขอข้อมูล slot ทั้งหมดจาก backend แปลง JSON ให้เป็น array แล้วเก็บลงตัวแปร slots.value ใช้ในการแสดงผลบน UI
 async function fetchSlots() {
   loading.value = true
 
@@ -242,6 +250,9 @@ async function fetchSlots() {
 }
 
 /* ---------- MOUNT ---------- */
+// เช็ค token ว่าผู้ใช้ login หรือยัง
+// ถ้าไม่มี → เด้งกลับหน้า login
+// ถ้ามี → โหลดข้อมูล slot ทันที (เรียก fetchSlots())
 onMounted(() => {
   if (!token.value) return navigateTo("/")
   fetchSlots()

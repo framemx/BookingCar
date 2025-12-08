@@ -77,10 +77,14 @@ import { useCookie, navigateTo } from "#app"
 
 /* -------------------- STATE -------------------- */
 const users = ref<any[]>([])
+
+// ตัวแปรสถานะ
 const isEditing = ref(false)
+
 const error = ref("")
 const success = ref("")
 
+// ตัวแปรสำคัญของฟอร์ม
 const form = ref({
   id: null,
   uName: "",
@@ -184,6 +188,7 @@ async function handleSubmit() {
       body: JSON.stringify(form.value),
     })
 
+    // ถ้า server ส่ง 401 Unauthorized หมายถึง token หมดอายุหรือไม่ถูกต้อง
     if (res.status === 401) return handleUnauthorized()
 
     success.value = isEditing.value

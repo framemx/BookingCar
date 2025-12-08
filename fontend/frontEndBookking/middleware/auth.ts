@@ -7,5 +7,5 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // ไม่มี token → ปล่อยให้เข้า login, register, home ได้
-  return
+  return 
 })
